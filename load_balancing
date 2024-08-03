@@ -1,0 +1,90 @@
+Let us say we have 'N' servers than the concept that each server has a even load (that is responds to same number of request) is load balancing
+
+Now let us understand why we need consistent hashing. Let us say i have a system with 4 servers. I get request from number 0 to 100 
+what i do is i use a hash function which is basically number % 4 (servers) , whatever comes that server serves request 
+
+Now due to scaling i need to add 1 server , again my hashing function stays same is changes to number % 5
+
+This is a issue ex for all users between 81-100 they were served by 4th server they would now be served by 5th server, so all info which was cached for users 
+becomes useless . so this hashing function is not good because anychange in servers causes a big change in who handles a request causing upheavel in system
+and leading to loss of stored info etc 
+
+So in summary the problem is not load balancing, the problem is in adding/removing servers problem 
+with the modulo-based hashing approach for load balancing. When the number of servers changes, a large portion of requests get remapped to different servers
+
+*** Consistent Hashing ***
+
+Consistent hashing is a technique designed to address this issue by minimizing the remapping of keys (requests) to different servers 
+when the number of servers changes. Here's how consistent hashing works:
+
+Hash Ring: Consistent hashing uses a hash ring, which is a circular space or a ring where all possible keys (or requests) are mapped using a hash function.
+
+Server Mapping: Each server is also mapped to multiple points on the hash ring using the same hash function, but with different inputs (e.g., server IP addresses or unique identifiers).
+
+Key Mapping: When a key (request) needs to be mapped to a server, its hash value is calculated and mapped onto the hash ring. 
+The server whose point on the ring is closest in a clockwise direction to the key's hash value is responsible for serving that key.
+
+Server Addition/Removal: When a new server is added, it is assigned multiple points on the hash ring. 
+Only the keys that fall between the new server's points and the next clockwise server's points will be remapped to the new server. 
+Similarly, when a server is removed, only the keys that were mapped to that server's points will be remapped to the next clockwise server's points.
+
+The consistent hashing algorithm that is commonly used is based on the concept of "rendezvous hashing," which uses the highest-weight node (server) 
+as the rendezvous point for a given key.
+
+
+Suppose we have a system with 4 servers initially, and we're using consistent hashing to map requests in the range of 0-100 to these servers. L
+Let's assume that the hash function maps the requests and servers to points on a hash ring with a range of 0-359 (360 points).
+
+Initial setup with 4 servers:
+
+Server 1 is mapped to points 10, 100, 190, and 280 on the hash ring.
+Server 2 is mapped to points 50, 140, 230, and 320.
+Server 3 is mapped to points 70, 160, 250, and 340.
+Server 4 is mapped to points 30, 120, 210, and 300.
+Now, let's consider the requests in the range of 81-100 and 60-75.
+
+Requests in the range of 81-100:
+
+These requests will be mapped to the server whose point on the hash ring is closest in the clockwise direction.
+For example, if the hash value of request 85 is 85, it will be mapped to Server 4 because the closest point in the clockwise direction is 120 (belonging to Server 4).
+Requests in the range of 60-75:
+
+These requests will also be mapped to the server whose point on the hash ring is closest in the clockwise direction.
+For example, if the hash value of request 70 is 70, it will be mapped to Server 3 because the closest point in the clockwise direction is 70 (belonging to Server 3).
+
+
+Now, let's add a new server (Server 5) to the system. Consistent hashing will distribute the requests as follows:
+
+Server 5 is mapped to points 20, 110, 200, and 290 on the hash ring.
+Requests that fall between the points 120 (Server 4) and 200 (Server 5) in the clockwise direction will be remapped from Server 4 to Server 5.
+Requests that fall between the points 290 (Server 5) and 300 (Server 4) in the clockwise direction will be remapped from Server 4 to Server 5.
+In this example, the requests in the range of 81-100 will still be served by Server 4 because they fall between the points 300 (Server 4) and 10 (Server 1) on the hash ring, which is not affected by the addition of Server 5.
+
+However, some requests in the range of 60-75 may be remapped to Server 5 if their hash values fall between the points 120 (Server 4) and 200 (Server 5) on the hash ring.
+
+key difference is server 1 points to 4 points on ring If it pointed to only one we would still have situation similar to modulo hashing
+
+*** Database Sharding ***
+
+
+How to retrieve data quickly from database ?
+
+ways could be optimizing query, building index in db or sharding
+
+Sharding is a database architecture pattern that involves partitioning a large database across multiple smaller database instances, called shards. 
+Each shard is a separate database instance that holds a subset of the data from the overall dataset. The goal of sharding is to distribute the data and 
+the associated workload across multiple servers, enabling horizontal scaling and improving performance and availability.
+
+Here are some key aspects of sharding:
+
+Horizontal Partitioning: Sharding involves horizontally partitioning the data across multiple shards, as opposed to vertically partitioning the data 
+(splitting by columns or tables). Each shard contains a subset of the rows or documents from the entire dataset.
+
+Sharding Key: The data is partitioned across shards based on a specific key or set of keys, known as the sharding key. 
+Common sharding keys include primary keys, ranges of values, or hashed values derived from the data.
+
+Sharding Strategy: Different sharding strategies can be employed, such as range-based sharding (partitioning data based on ranges of values), 
+hash-based sharding (partitioning data based on a hash function applied to the sharding key), or composite sharding (using a combination of keys).
+
+Query Routing: When a query is executed, it needs to be routed to the appropriate shard(s) based on the sharding key or keys used in the query. 
+This is typically handled by a query router or a sharding middleware layer.

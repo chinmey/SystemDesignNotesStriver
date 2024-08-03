@@ -1,0 +1,194 @@
+*** Scaling ****  
+
+Ability of system to handle more requests or handle request in a faster way. If we add more machines (horizontol scaling) / bigger machine (vertical)
+Pros and Cons of each 
+
+There is a hardware limitation to VS , since we can't keep on increasing size of machine (ex its ram/ ssd etc)
+VS is faster since all data is available in same machine so all calls are inter-process , whereas for HS we need remote calls ( which are IO) so slower
+VS will always be consistent (termed explained in later topic) whereas this can't be ensured in HS
+HS will need some sort of load balancer , not needed in VS
+If some of requests fail , we can redirect those requests while having HS can't be done for VS, so we can HS are more reselient / VS have single point failure
+
+In real world we use a combo (that is we take as big as machine as possible and than add more machines when user increase)
+
+*** CAP Theoram ****
+
+In a distributed system (Horizontolly Scaled machines), we can have only 2 of the below 3
+
+Consistency :: Data is same across all nodes regardless of which user is logged in (or we always get most recent update/copy of data)
+Availability :: System is up , i.e. it is able to serve customer traffic 
+Partition tolerance :: The system continues to operate despite an arbitrary number of messages being dropped (or delayed) by the network between nodes.
+i.e. even if network drops system works 
+
+
+Example :: we have 2 atm machines which supports 2 things (deposit/withdraw), at any time balance should not fall below 0, balance for users is maintained
+on the machine itself, and updated via network between machines post each transactions, now let us say network drops 
+
+If we prioritise Availability, we will allow transcations without balance update which could make system inconsistent (ex balance < 0)
+If we prioritise Consistency, we will make transcations stop so reducing Availability this is what we prefer 
+
+Example :: In Social media if 2 users are commenting at same time comments between users is not consistent , here we prioritise Availability since we dont
+want the post to become unavailable its okay to be inconsistent for some time 
+
+In real world , we often have combinition of these two things , whereas CAP targets absolute ex in ATM case we can allow deposits and stop withdraws 
+
+*** Capacity Estimation ****
+
+Example :: How much storage does youtube need per day?
+
+Make some estimates :: Let say yt has 1B users , every 1/1000 user upload video of avg length 10 min , assumimg size of 200 MB for per hour of video footage
+it is around 3 MB per minute 
+
+Total size :: 1B * 1/1000 * 10 * 3 -- 10^7 *3 = 30 Terabyte of data = let us say this is x
+
+To ensure we keep more than 1 copy of data (for safety and speed of access) , let us say i keep 3 : 3x
+
+Also let us say original calculation was for 720p , i also need for 360p, 240p, 144p assuming size goes to half which each quality decrease : x/2 + x/4 + x/8 ... = x
+
+Total :: 3x *2 = 6x = 180 TB.
+
+
+*** Network protocols ***
+
+
+A protocol is a set of rules for processing/formatting the data , network protocol is like a common language between computers
+
+IP protocol :: when machine sends data to other machines it is sent in form of ip packet , it consists of 2 parts (header :: destination/source/version etc)
+and data itself, size of IP packet is around 0.06 MB  
+
+So if we are sending anything larger it is sent using multiple ip packets , to ensure that order of these packets as well as data inside them is correct
+we use TCP (Transmission control protocol), therefore all IP packets have a TCP header , when a client (ex our machine) wants to connect with any server we
+first need to form a TCP connection it is called a TCP handshake (3-way), TCP stack consist of (Physical/DataLink/Network/Transport/Application layer)
+
+TCP lacks a user-friendly framework (ex assembly language) , HTTP is a abstraction on top of that which follows a req-res model used by developers etc(ex JAVA)
+Features of HTTP
+HTTP is connectionless: After serving a single HTTP request, the client-server connection is closed and that same connection is never used again.
+HTTP is media independent: It means that HTTP can send any sort of data as long as both the client and the server understand how to process the data.
+HTTP is stateless: The client and server only know about each other during the current request, and when the connection is disconnected, both the client and the server forget about each other.
+
+HTTP uses port-80 , HTTPS is a secured form of HTTP uses port 443 , data transfer is encrypted, it uses Transport Layer security (TLP) for encryption
+
+UDP is alternative to TCP used for streaming videos/games , it is faster than TCP because it does not check if information is received or not.
+
+What happens we search any URL (ex google.com) ?
+Browser need to find IP address of this string. it first check its own cache , if not found asks OS to resolve , it checks in host file if not found makes 
+DNS calls to fetch same , post which using above protocols we see webpage being served
+
+
+*** RDBMS/No-SQL ****
+
+
+Relational Databases (RDBMS):
+
+Data is stored in tables with predefined schemas and relationships between tables.
+Data is structured and follows a tabular format with rows and columns.
+Supports ACID (Atomicity, Consistency, Isolation, Durability) properties for data integrity and uses SQL for querying and manipulating
+Suitable for complex transactions and queries involving joins and relationships.
+Examples: MySQL, PostgreSQL, Oracle, SQL Server.
+
+Non-Relational Databases (NoSQL):
+
+Data is stored in flexible, schema-less formats like key-value pairs, documents, columnar, or graph structures.
+Data is typically denormalized and optimized for specific data models.
+Provides high scalability and performance for large-scale data storage and retrieval.
+Supports eventual consistency rather than strict ACID properties.
+Suitable for handling large volumes of unstructured or semi-structured data.
+Examples: MongoDB (document-oriented), Cassandra (wide-column store), Redis (key-value store), Neo4j (graph database).
+
+RDBMS Examples:
+
+Banking and Finance: Banks and financial institutions often use RDBMS like Oracle, SQL Server, or PostgreSQL for their core banking systems, 
+transaction processing, and customer data management. These systems require strict data integrity, complex queries, and ACID compliance.
+
+E-commerce: Online retailers like Amazon and eBay use RDBMS like MySQL or PostgreSQL for storing and managing product catalogs, customer orders, and 
+transactional data. The structured nature of this data and the need for complex queries make RDBMS a suitable choice.
+
+NoSQL Examples:
+
+Social Media: Facebook uses a combination of NoSQL databases like Apache Cassandra and RocksDB for storing and serving user data, news feeds, 
+and social graphs. The massive scale and high write throughput requirements make NoSQL databases a better fit for these use cases.
+
+Content Management and Delivery: Netflix and Amazon Prime Video use NoSQL databases like Apache Cassandra and DynamoDB for storing and serving video 
+content metadata, user preferences, and recommendations. The ability to scale horizontally and handle large volumes of data makes NoSQL databases suitable for these applications.
+
+Some popular questions ----------
+
+::: Relational databases (RDBMS) can support horizontal scalability, but it is generally more complex and challenging compared to NoSQL databases. 
+
+Data Partitioning: In RDBMS, data is typically stored in tables with relationships and constraints, making it challenging to partition data across multiple nodes 
+or servers. Partitioning data in a way that maintains data integrity and supports complex queries involving joins and transactions can be complex.
+
+Distributed Transactions: RDBMS rely on ACID (Atomicity, Consistency, Isolation, Durability) properties for data integrity, which requires distributed 
+transactions to be coordinated across multiple nodes or servers. Ensuring ACID compliance in a distributed environment can be challenging and can impact performance and scalability.
+
+::: Indexing in no-SQL database
+
+Indexing is done to ensure faster retrieval of things from tables, in no-SQL db since they are distributed indexing is done to know in which host our record exist
+So we will have a partition key (lets say user_id) and a hash function which would give us this
+
+No-SQL database are always not normalised which ensured even faster retrieval ex we can have a field called user_country = user_id + country, this would
+give us even better results in case we need all users from  a country example
+
+
+*** Load balancing (from internal amazon talk) ***
+
+They talk about a concept of maxConn which is basically how many concurrent users your service would have per host at a time 
+If this number is too high host is saturated , if this number is low host is under utilised 
+To determine this we use little law , to understand it , let us say how many people are in a shop , they would be rate of their entry * time spend shopping
+for service maxConn = request rate * latency , ex for a service having 6.5 Million request per hour and average latency is 50 ms 
+maxConn = 6,500,000/3600 * 50/1000 = 90 , maxConn is a load balancer concept(host level) so let us say we had 18 active hosts during this time
+
+peakConn = fleet_wide_maxConn/ no of active host during peak = 90/18 = 5 
+This is peakConn (avg or p50) , we also need to know peakConn during peakHour : let us say this value comes out to be 10
+
+Now this is only client-side latency , we will also have server side latency(network latency for a request to come to us etc) : let us say this extends it to 11
+This number is still not correct because it gives peak server utilisation seen , we should have some headroom for emergencies and safety etc 
+
+maxConn --> 11 + 3(emergencies ensuring server is only around 70% used) = 14
+
+
+*** Cache ****
+
+Memory in CPU is organised in 3 ways (secondary memeory (disk) + main memory (ram) + cache memory ) , cache me we search first.
+Cache underlying principle is the locality of reference
+
+In the locality of reference, huge data is placed in a small area (data which is needed) so that the access time will be less and the performance will be higher.
+The locality of reference is of two types:
+
+Spatial locality: The adjacent words in the block are referenced by the CPU  in the near future.
+Temporal locality: The same word in the block are referenced by the CPU in the near future  
+
+
+*** Thrashing ***
+
+CPU bound tasks --> task which require CPU ex performing complex calculation
+
+I/O bound --> tasks which require more time on I/O devices ex printing / making network call etc 
+
+It is a condition in which number of page hits (cache hits) reduces and more time is spend in bring pages from SM to Memory
+
+Paging is concept of bringing part of process into ram from SM. However since ram is limited to bring a large % of process in ram we can only bring few processes
+Now if these processes ask for I/O , our CPU utilisation reduces 
+To couter this we may increase degree of multiprogramming and bring a lot of processes with less % in ram, but now chances of what process needs is present
+in ram is low so OS will need to fetch pages from SM to MM again and again causing reduce of CPU capacity usage.
+
+
+*** Difference between program, process and thread ***
+
+A program consists of instructions in any programming language.
+A process consists of instructions in machine code. A program in execution is called a process.
+Thread is the basic unit of execution or CPU utilization. 
+
+Definition
+A program is a passive entity, which is a file containing a list of instructions stored on a disk (often called an executable file). 
+A process on the other hand is an active entity with a program counter specifying the next instruction to be executed and a set of associated resources. 
+A program becomes a process when an executable file is loaded into memory.
+
+A thread is a basic unit of CPU utilization. It comprises a shared ID, a program counter, a register set, and a stack.
+It shares code section, data section, and other operating system resources such as open files and signals.
+
+Threads are easier to create and terminate, Processes are not easy to create and terminate.
+Multiple threads when they are in the same process share the same address, Processes do not share the same address 
+It is easy to communicate between the threads, To communicate between processes we need operating system intervention. 
+It takes less time in context switching,It takes more time to context switch.
+

@@ -1,0 +1,235 @@
+*** Bloom filters ***
+
+Bloom filters :: This is datastructure used to prevent one hit wonders from being stored in cache , basically a string which may be serached only once should 
+not be stored in our cache since it would occupy space and kick out some other useful string.
+
+How do we do this ?
+
+We take a string and pass in via a series of hash function. If they result of each hash function is same for 2 strings we assume they are both same.
+Comparing string O(m+n) , comparing hash is O(1)
+
+For comparing hashes we may keep a array all set to zero initially 
+
+Than first string comes ex "cat" : result of it being passed via hash functions is 2,3,5 we set those indexes to 1
+Than another string comes ex "rat" : result of it being passed via hash functions is 1,3,5 , since these are not exactly same we can be sure "rat" has not 
+been searched before and we set index 1 also to 1. once lets say 80% of array (called bloom filter) is filled we can reset it .
+
+As seen bloom filter is a probabilistic ds , meaning if the results of hash function match there is a high probability that strings are same but its not a 
+guarantee, but major advantage is if results don't match it is a guarantee that strings are not same.
+
+
+*** Data Replication ***
+
+
+One of issues we can have with having single db is that if it crashes/fails our whole system is at risk, to remedy this we use data replication.
+
+There are 2 ways to copy data between dbs (sync and async), issue with async is that data won't be consistent across dbs so mostly sync is used
+
+The db which can support write operation is called Master. So in a typical Master-slave db , one db would support write , and as soon as it gets write it
+updates the same to slaves, this helps in scaling out read operations , also we can have multiple slaves paired up with each sharded db allowing for lower 
+latency and relaiability.
+
+However this still means write operation is not scaled so we can think of Master-Master architecture, however this poses a other problem what happens if 
+the network connecting both dbs fails in this case both assume themselves to be master and thus we can have data consistency issue
+
+To solve this we introduce a third node (also a Master) and we assume that both network and one of node don't fail at same time and update to each db is done
+via consecus between each nodes and this is called distributed consecus
+
+Ex
+Imagine you have a distributed database system with three nodes (Node A, Node B, and Node C). Each node maintains a copy of a shared value, let's call it "X." 
+Initially, the value of X is 0 on all three nodes.
+
+Now, let's say Node A wants to increment the value of X by 1. In a non-distributed system, this would be a simple operation. 
+However, in a distributed system, Node A needs to ensure that the other nodes (Node B and Node C) also update their copies of X to maintain consistency.
+
+Here's how distributed consensus can be achieved in this scenario:
+
+Proposing a Value: Node A proposes a new value for X, which is 1 (the current value 0 + 1).
+
+Reaching Agreement: Node A sends its proposal to Node B and Node C. All three nodes then participate in a consensus protocol to agree on the proposed value. 
+A common consensus protocol is called "Paxos," which involves multiple rounds of message exchanges to ensure that all nodes agree on the same value.
+
+Committing the Value: Once consensus is reached, all three nodes commit the agreed-upon value (1) as the new value for X.
+
+Persisting the Value: After committing the value, each node updates its local copy of X to reflect the new agreed-upon value (1).
+
+
+**** Optimizing write of db/ How are No-SQL optimized ***************
+
+One strategy could be to condense our SQL queries as much as possible , this would reduce cycles of acknowledgement/consecus etc in db thus giving
+fast I/O , however it has a disadvantage that this would need additional memory (to store queries etc)
+
+The fastest ds for write can be Linked List where we store tail node, so insertion at end would be O(1). A ds which uses this is Log. This would give us
+fast write however for reading we would need to traverse linked list so disadvantge is slow read.
+
+So we want the write of LL but not its read , so we can use a sorted array for storing since that gives O(logN) reads.
+
+How ?
+
+Server --> logs(LL) ---> flushed at once to --> db (converts it to array) , so now each time we get a flush we need to merge it to our existing array
+over time as array size grows this could become very slow so after some size we store next flush as a different file(chunk) in db this is to avoid reinserting
+and sorting whole data again and again , so when it comes to reading we just go thru all chunks , this is called sorted string table (sst)
+
+We can apply boom filter on top of this to make it even faster
+
+
+******* Location based database ******************************
+
+
+requirement is how do you store a point in db ? it should have 3 qualities
+
+1) we should be able to measure distance between any 2 points 
+2) we should be able to granularly divide our point 
+3) we should be able to find points close to me easily
+
+Basic solution of storing it in (latitute, longitude) fails 3rd check because to find lets say things in my 500 m radius i need to go thru whole db O(N)
+
+what we can think of is bits similar to binary number and use 32 bit to represent x axis and 32 bit for y axis , than we use can binary search to get to point
+As the bits increase so does granularly ex (0,0) could be top of middle of equator , proximity can be found by comparing prefixes if they are same points are close 
+
+This ds is called QuadTree (it is similar to bst but works with 2 dimensions so it has 4 children)
+
+To store the locations of users in a database using a quad tree, you can follow these general steps:
+
+Divide the Space: The first step is to define a bounding box or a rectangular area that encompasses all the possible locations of users. 
+This bounding box is then recursively divided into four equal quadrants or sub-regions.
+
+Build the Quad Tree: Each user's location is represented as a point in the two-dimensional space. The points are inserted into the quad tree by traversing 
+from the root node (the entire bounding box) and recursively subdividing the space into quadrants until the desired level of granularity is reached.
+
+Store User Data: At the leaf nodes of the quad tree, you can store the user data associated with each location. 
+This data can include user IDs, names, or any other relevant information.
+
+Once the quad tree is constructed, you can perform various queries to find users based on their locations. Here are some common queries and 
+how they can be implemented using a quad tree:
+
+Finding Users Within a Region: To find users within a specific region, you can traverse the quad tree and search for leaf nodes whose locations fall 
+within the given region. This can be done by checking if the region intersects with the bounding box of each node and recursively exploring the 
+child nodes if necessary.
+
+Finding Nearby Users: To find users near a specific location, you can perform a range query on the quad tree. This involves traversing the tree and 
+finding all leaf nodes within a certain distance from the given location. You can use the bounding boxes of the nodes to prune the search space and 
+avoid exploring irrelevant branches.
+
+
+Sample code for this 
+
+
+class Point {
+    double x, y;
+    User user; // Assume User is a class containing user data
+
+    public Point(double x, double y, User user) {
+        this.x = x;
+        this.y = y;
+        this.user = user;
+    }
+}
+
+class QuadTree {
+    private static final int MAX_POINTS = 4;
+    private Rect boundary;
+    private List<Point> points;
+    private QuadTree[] children;
+
+    public QuadTree(Rect boundary) {
+        this.boundary = boundary;
+        this.points = new ArrayList<>();
+        this.children = new QuadTree[4];
+    }
+
+    public void insert(Point point) {
+        if (!boundary.contains(point)) {
+            return;
+        }
+
+        if (points.size() < MAX_POINTS) {
+            points.add(point);
+        } else {
+            if (children[0] == null) {
+                subdivide();
+            }
+            for (QuadTree child : children) {
+                child.insert(point);
+            }
+        }
+    }
+
+    private void subdivide() {
+        double x = boundary.x;
+        double y = boundary.y;
+        double halfWidth = boundary.width / 2;
+        double halfHeight = boundary.height / 2;
+
+        children[0] = new QuadTree(new Rect(x, y, halfWidth, halfHeight));
+        children[1] = new QuadTree(new Rect(x + halfWidth, y, halfWidth, halfHeight));
+        children[2] = new QuadTree(new Rect(x, y + halfHeight, halfWidth, halfHeight));
+        children[3] = new QuadTree(new Rect(x + halfWidth, y + halfHeight, halfWidth, halfHeight));
+    }
+
+    public List<User> queryRange(Rect range) {
+        List<User> result = new ArrayList<>();
+
+        if (!boundary.intersects(range)) {
+            return result;
+        }
+
+        for (Point point : points) {
+            if (range.contains(point)) {
+                result.add(point.user);
+            }
+        }
+
+        if (children[0] != null) {
+            for (QuadTree child : children) {
+                result.addAll(child.queryRange(range));
+            }
+        }
+
+        return result;
+    }
+}
+
+class Rect {
+    double x, y, width, height;
+
+    public Rect(double x, double y, double width, double height) {
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+    }
+
+    public boolean contains(Point point) {
+        return point.x >= x && point.x < x + width &&
+               point.y >= y && point.y < y + height;
+    }
+
+    public boolean intersects(Rect range) {
+        return !(range.x > x + width || range.x + range.width < x ||
+                 range.y > y + height || range.y + range.height < y);
+    }
+}
+
+
+********** Database migration ******************************
+
+So you found a flashy new database technology. You run some tests, check the performance, and are convinced! 
+Time to speak to your manager! But wait… How do you move millions of records, each entry representing a user's aspirations, into a new database? 
+Without any downtime? AND without any mistakes
+
+1. Set up a change data capture solution (Similar to a SQL trigger).
+
+2. Take a database copy of all older records.
+
+3. Setup a view or proxy to serve existing clients through the old database.
+
+4. Set the clients to point to the proxy.
+
+5. Now point the proxy to the new database.
+
+6. Point clients to the new database directly (this requires a deployment or server restart).
+
+7. Delete the proxy.
+
+
