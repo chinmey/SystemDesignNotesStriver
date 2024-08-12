@@ -1,0 +1,104 @@
+*** push V pull architecture ***
+
+
+In system design, the terms "push" and "pull" architecture refer to two different approaches for data transfer or communication between components or systems. These architectures determine how data is propagated or retrieved within the system.
+
+1. **Push Architecture**:
+In a push architecture, the data producer (sender) initiates the transfer of data to the consumer (receiver). The producer actively "pushes" the data to the consumer without the consumer explicitly requesting it. This approach is often used in scenarios where data needs to be delivered in real-time or near real-time, such as in messaging systems, event-driven architectures, or streaming applications.
+
+Examples of push architecture include:
+- Publish-Subscribe (Pub/Sub) messaging systems
+- Push notifications in mobile applications
+- Server-sent events (SSE) in web applications
+- WebSocket communication
+
+2. **Pull Architecture**:
+In a pull architecture, the consumer (receiver) initiates the retrieval of data from the producer (sender). The consumer actively "pulls" the data from the producer by sending a request or query. This approach is commonly used in client-server architectures, where clients request data from servers on-demand.
+
+Examples of pull architecture include:
+- RESTful APIs and web services
+- Client-server applications (e.g., web browsers requesting web pages from servers)
+- Polling mechanisms (e.g., periodically checking for updates)
+- Database queries
+
+The choice between push and pull architectures depends on various factors, such as:
+
+- **Real-time requirements**: If data needs to be delivered in real-time or with low latency, a push architecture may be more suitable.
+- **Data volume and frequency**: If data is generated frequently or in large volumes, a push architecture can be more efficient by avoiding unnecessary polling or requests.
+- **Resource constraints**: Pull architectures may be preferred when the consumer has limited resources or needs to control the data retrieval rate.
+- **Scalability and decoupling**: Push architectures often involve decoupled components, which can improve scalability and fault tolerance.
+
+It's worth noting that some systems may combine both push and pull architectures, where data is initially pushed from the producer to an intermediary component (e.g., a message queue or cache), and then consumers pull data from that intermediary component as needed.
+
+The choice between push and pull architectures depends on the specific requirements of the system, such as performance, scalability, real-time needs, and the nature of the data being transferred.
+
+
+*** Throughput v Latency ***
+
+
+In the context of system design, throughput and latency are two important performance metrics that are often considered and optimized for different types of systems and use cases.
+
+**Throughput**:
+Throughput refers to the amount of data or work that can be processed or transferred within a given time period. It is typically measured in units such as requests per second, transactions per second, or bytes per second. High throughput is desirable in systems that need to handle a large volume of data or requests efficiently.
+
+Examples where high throughput is important:
+- Web servers handling a high volume of concurrent requests
+- Data processing pipelines that need to process large amounts of data quickly
+- Distributed systems that need to handle a high rate of events or messages
+
+**Latency**:
+Latency, on the other hand, refers to the delay or time it takes for a request or operation to be completed. It is typically measured in units of time, such as milliseconds or seconds. Low latency is crucial in systems that require real-time or near real-time responsiveness.
+
+Examples where low latency is important:
+- Real-time trading systems in finance
+- Online gaming or video streaming applications
+- Voice over IP (VoIP) and video conferencing systems
+- Responsive user interfaces in web or mobile applications
+
+In system design, there is often a trade-off between optimizing for throughput and optimizing for latency. Techniques that improve throughput, such as batching or buffering requests, may increase latency. Conversely, techniques that reduce latency, such as prioritizing requests or using faster communication protocols, may impact throughput.
+
+The choice between prioritizing throughput or latency depends on the specific requirements and constraints of the system. For example, in a high-volume data processing pipeline, throughput may be the primary concern to ensure efficient processing of large amounts of data. In contrast, for a real-time gaming application, low latency is critical to provide a smooth and responsive user experience.
+
+In some cases, systems may need to balance both throughput and latency requirements. This can be achieved through techniques like load balancing, caching, asynchronous processing, and optimizing resource utilization.
+
+When designing systems, it is essential to understand the performance requirements, identify the bottlenecks, and apply appropriate techniques and architectures to optimize for the desired throughput and latency characteristics.
+
+
+*** SQL v No-SQL db ***
+
+SQL (Structured Query Language) and NoSQL (Not only SQL) databases are two different types of database management systems that differ in their data models, query languages, and use cases.
+
+SQL Databases: SQL databases, also known as relational databases, are based on the relational model and use structured query language (SQL) for data manipulation and querying. They store data in tables with predefined schemas, where each table consists of rows and columns. SQL databases enforce strict data integrity rules and support transactions (ACID properties: Atomicity, Consistency, Isolation, Durability).
+
+Examples of SQL databases: MySQL, PostgreSQL, Oracle, SQL Server, SQLite.
+
+Advantages of SQL databases:
+
+Structured data model with well-defined schemas
+Support for complex queries and joins
+Strict data integrity and consistency
+Support for transactions (ACID compliance)
+Mature and well-established technology
+NoSQL Databases: NoSQL databases are non-relational databases that store data in a flexible, semi-structured or unstructured way. They are designed to handle large volumes of data and provide high scalability and availability. NoSQL databases can be categorized into different types, such as key-value stores, document databases, column-family stores, and graph databases.
+
+Examples of NoSQL databases: MongoDB (document database), Cassandra (column-family store), Redis (key-value store), Neo4j (graph database).
+
+Advantages of NoSQL databases:
+
+Flexible schema or schema-less data model
+Horizontal scalability and high availability
+Better performance for specific use cases (e.g., big data, real-time applications)
+Ability to handle semi-structured or unstructured data
+Designed for distributed and cloud environments
+When to use SQL databases: SQL databases are a good choice when you have structured data with well-defined relationships, and you need to perform complex queries and transactions. They are suitable for applications that require data integrity, consistency, and support for ACID properties, such as banking systems, financial applications, and traditional business applications.
+
+When to use NoSQL databases: NoSQL databases are a better fit when you have large volumes of unstructured or semi-structured data, and you need high scalability and availability. They are often used in big data applications, real-time analytics, content management systems, IoT applications, and applications that require flexible data models or rapid development cycles.
+
+
+Why is ***sharding*** not inherent in SQL db ?
+
+Relational Data Model: SQL databases follow a relational data model, where data is stored in tables with relationships between them. Sharding data across multiple nodes can lead to complex join operations and distributed transactions, which are challenging to manage and can impact performance.
+
+Distributed Transactions: SQL databases typically support ACID (Atomicity, Consistency, Isolation, Durability) properties for transactions. Maintaining ACID properties across multiple shards is challenging, as it requires coordinating distributed transactions, which can be slow and prone to failures.
+
+Query Complexity: SQL databases support complex queries involving joins, subqueries, and aggregations. When data is sharded, these queries may need to be executed across multiple shards, which can be inefficient and require complex query routing and result aggregation mechanisms
