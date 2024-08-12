@@ -1,0 +1,72 @@
+Monolithic Architecture:
+A monolithic architecture is a traditional approach to building software applications, where the entire application is designed as a single, self-contained unit. In a monolithic application, all components, such as the user interface, business logic, data access layer, and other services, are tightly coupled and packaged together into a single executable or deployable unit.
+
+Microservices Architecture:
+A microservices architecture is an architectural style that structures an application as a collection of small, independent, and loosely coupled services. Each microservice is responsible for a specific business capability or domain and can be developed, deployed, and scaled independently from the others. Microservices communicate with each other through well-defined APIs (Application Programming Interfaces) and are typically organized around business capabilities or domains.
+
+Now, let's explore the advantages and disadvantages of each architecture:
+
+Monolithic Architecture:
+
+Advantages:
+1. Simple to develop and deploy: A monolithic application is a single codebase, making it easier to develop, build, and deploy.
+2. Cross-cutting concerns: Concerns like logging, security, and caching can be implemented consistently across the application.
+3. Easier testing and debugging: With a single codebase, it's easier to test and debug the entire application.
+4. Efficient communication: Components within the application can communicate efficiently without the need for complex inter-process communication mechanisms.
+
+Disadvantages:
+1. Scalability challenges: Scaling a monolithic application can be difficult, as the entire application must be scaled together, even if only a part of it requires more resources.
+2. Tight coupling: Components within the monolith are tightly coupled, making it harder to modify or replace individual components without affecting others.
+3. Technology lock-in: The entire application is bound to a specific technology stack, making it difficult to adopt new technologies or programming languages.
+4. Longer deployment cycles: Any change, no matter how small, requires redeploying the entire application, leading to longer deployment cycles and potential downtime.
+
+Microservices Architecture:
+
+Advantages:
+1. Scalability: Individual microservices can be scaled independently based on demand, allowing for more efficient resource utilization.
+2. Fault isolation: If one microservice fails, it doesn't necessarily affect the entire application, as other microservices can continue to function.
+3. Technology flexibility: Each microservice can be developed using the most appropriate technology stack, allowing for the adoption of new technologies and programming languages.
+4. Faster deployment cycles: With smaller codebases, microservices can be developed, tested, and deployed independently, leading to faster deployment cycles.
+5. Organizational alignment: Microservices can be developed and maintained by small, autonomous teams aligned with specific business capabilities.
+
+Disadvantages:
+1. Complexity: Developing and managing a distributed system of microservices is inherently more complex than a monolithic application.
+2. Inter-service communication: Microservices need to communicate with each other, often over a network, which can introduce latency and potential failure points.
+3. Distributed data management: Data management becomes more challenging as data is distributed across multiple microservices, requiring careful design and implementation of data consistency and integrity mechanisms.
+4. Operational overhead: Deploying, monitoring, and managing multiple microservices can introduce additional operational overhead and complexity.
+5. Testing challenges: End-to-end testing of a microservices-based application can be more challenging due to the distributed nature of the system.
+
+
+
+To move from monolith to microservice it is better when new features come to make them as new service and slowly convert our monolith to microservice.
+We would need to define contract(client), routing , logging etc.
+
+
+
+*** API Design ***
+
+
+An API is a document/contract by which external clients can interact our code. Things to be kept in mind while designing APIs
+
+1) Name   2) Parameter defined (take as much as needed) 3) response (return as much as needed) 4) error definitions 5) routing 6) Avoid side-effects (if we are doing multiple operations we should break it)
+
+
+In 1 line , parallel (multiple servers/processes) and concurrent (using multiple threads in same system/process)
+
+Async APIs: Asynchronous APIs allow an application to initiate a potentially blocking operation and continue executing other tasks while waiting for the operation to complete. This approach helps prevent the application from becoming unresponsive or blocked while waiting for a long-running operation. Async APIs are commonly used for file I/O, network requests, database operations, and other tasks that may take a significant amount of time to complete.
+
+Example: Imagine you have a web application that needs to fetch data from a remote server. Instead of blocking the main thread while waiting for the server response, you can use an async API to initiate the request and continue handling other tasks or user interactions. Once the server response is received, the async API will notify your application, allowing you to process the data without blocking the main thread.
+
+Concurrency: Concurrency refers to the ability of a system to handle multiple tasks or operations simultaneously. In a concurrent system, multiple tasks can make progress concurrently, even if they are not executing in parallel. Concurrency is achieved through techniques like multithreading, event loops, or coroutines, which allow the system to switch between tasks efficiently.
+
+Example: Consider a web server that needs to handle multiple client requests simultaneously. Instead of processing each request sequentially, the web server can use concurrency to handle multiple requests concurrently. When a new request arrives, the server can create a new thread or use an event loop to handle the request without blocking the main thread or other requests.
+
+Parallelism: Parallelism refers to the ability of a system to execute multiple tasks or operations simultaneously on different processors or cores. In a parallel system, multiple tasks can run truly in parallel, taking advantage of multiple CPU cores or processors to achieve higher performance.
+
+Example: Imagine you have a computationally intensive task, such as image processing or scientific simulations. By leveraging parallelism, you can divide the task into smaller subtasks and distribute them across multiple CPU cores or processors. Each core or processor can work on a different subtask simultaneously, potentially reducing the overall execution time significantly.
+
+Combining Concurrency and Parallelism: While concurrency and parallelism are related concepts, they are not mutually exclusive. In fact, combining concurrency and parallelism can lead to even better performance and resource utilization.
+
+Example: Let's consider a web server that needs to handle multiple client requests simultaneously (concurrency) while also performing computationally intensive tasks like image processing or data analysis (parallelism). The web server can use an event loop or multithreading to handle multiple requests concurrently. When a request requires a computationally intensive task, the server can leverage parallelism by distributing the task across multiple CPU cores or processors. This way, the server can handle multiple requests concurrently while also taking advantage of parallel processing for computationally intensive tasks.
+
+In this example, the web server achieves concurrency by handling multiple requests simultaneously using an event loop or multithreading. At the same time, it leverages parallelism for computationally intensive tasks by distributing them across multiple CPU cores or processors. This combination of concurrency and parallelism allows the server to efficiently handle a high volume of requests while also providing high performance for computationally intensive tasks.

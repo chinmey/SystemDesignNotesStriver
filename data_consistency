@@ -164,7 +164,7 @@ If we are making an update to a key then the older value of the key stays in the
 
 We take the values that we care about but we are not changing and keep a version of them. For every key, we will store all the values that it has ever had in different transaction commits
 
-We use causal ordering here. If two transactions use queries for the same key then they must be ordered. Transactions that do not have any conflict can run concurrently.
+We use causal ordering here. If two transactions use queries for the same key then they must be ordered. Transactions that do not have any conflict can run concurrently. 
 
 
 

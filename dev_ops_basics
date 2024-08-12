@@ -1,0 +1,38 @@
+
+Single point of failure ;: if these crash , whole system can crash, ex a single db, avoid it by having redundancy (master-slave etc)
+
+
+*** OS/VM/Containers ***
+
+Operating System (OS): An operating system is a software that manages computer hardware and software resources and provides common services for computer programs. In the context of cloud computing, an operating system runs on physical servers or bare-metal machines and manages the underlying hardware resources such as CPU, memory, storage, and network interfaces.
+
+Virtual Machines (VMs): A virtual machine is a software-based emulation of a physical computer system. It runs on top of a physical machine's operating system, known as the host operating system, and provides an isolated environment for running a guest operating system and applications. Virtual machines allow multiple operating systems to run concurrently on a single physical machine, enabling better resource utilization and isolation between different workloads.
+
+The transition from operating systems to virtual machines was driven by the need for better resource utilization and consolidation. With virtual machines, multiple applications or workloads can run on the same physical hardware, reducing the need for dedicated physical servers for each application or workload.
+Another major advantage was *** platform independence *** since on a windows based OS we could run multiple linux based VMs
+
+VMs should be considered as mini-OS with all the capability managed by a HyperVisor. So they consume a lot of ram/CPU space from server. Also they are slow
+to start.
+
+Containers : so while a VM emuluate a entire OS , a container only emulates a individual application. A container has a package which has all files, configs,
+dependencies present to run a application. A container is ideal for storing microservices
+
+They are a lightweight and portable virtualization solution that runs on top of an operating system kernel. Unlike virtual machines, which emulate an entire operating system, containers share the host operating system kernel and isolate applications and their dependencies into separate, self-contained units. This isolation is achieved through kernel-level features like cgroups (control groups) and namespaces.
+The move from virtual machines to containers was driven by the need for even better resource utilization, faster startup times, and improved portability. Containers are more lightweight and efficient than virtual machines because they don't require emulating an entire operating system. They also provide a consistent environment for applications to run, making it easier to move applications between different environments (e.g., from development to production).
+
+
+*** How to avoid cascading failures in a distributed system/ Thundering herd problem ***
+
+Let us say in our server we have 4 servers , one crashes the load balances takes it load and divides it among other servers , now one of these serves reaches
+its capacity and crashes and load balancer does same eventually it would lead to all servers crashing which is cascading failure.
+
+To avoid it we should *** Rate Limit ***, so we would know the capacity of each server we only give it that much request once it crosses that we move on to 
+next servers the request which are left unallocated would be given a failure response , the principle we follow here is "Serving some request is better than serving none"
+
+If in case of black friday , we should order more capacity in advnace or do auto-scale.
+If in case of certain influx of request , we should rely on rate limit. 
+If in case of a job (like wishing new year), this should not try and send all response at once we should break it down to suitable sizes
+If in case of hotstar streaming match where everyone requests for same data , we can use rate limit with caching to solve issue
+
+
+We should use server *** metrics *** at all times to know if a server etc is going thru any anomaly.

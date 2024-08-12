@@ -1,0 +1,117 @@
+Cache is a key value pair which can sit between our server and db and provide responses. It has several advantages :
+
+1) Reduces network calls between server and db / It reduces load on DB 
+2) Avoid recomputataion (ex avg of something can be stored in cache and updated so that we don't have to check all rows in case a query comes)
+3) Since cache size is much lower than db its response time is faster
+
+
+The important task becomes to decide when do we load data in cache and when do we evict data this is called a policy, popular data eviction policy are 
+LRU, Sliding window
+
+
+Pseudo code LRU cache 
+
+// Node class to represent a key-value pair
+class Node {
+    int key;
+    int value;
+    Node prev;
+    Node next;
+    Node(int key, int value) {
+        this.key = key;
+        this.value = value;
+        prev = null;
+        next = null;
+    }
+}
+
+// LRU Cache class
+class LRUCache {
+    private int capacity;
+    private Map<Integer, Node> map;
+    private Node head;
+    private Node tail;
+
+    private void removeNode(Node node) {
+        Node prev = node.prev;
+        Node next = node.next;
+        if (prev != null) prev.next = next;
+        if (next != null) next.prev = prev;
+        if (node == head) head = next;
+        if (node == tail) tail = prev;
+    }
+
+    private void addToHead(Node node) {
+        node.next = head;
+        node.prev = null;
+        if (head != null) head.prev = node;
+        head = node;
+        if (tail == null) tail = node;
+    }
+
+    public LRUCache(int capacity) {
+        this.capacity = capacity;
+        map = new HashMap<>();
+        head = null;
+        tail = null;
+    }
+
+    public int get(int key) {
+        if (!map.containsKey(key)) return -1;
+        Node node = map.get(key);
+        removeNode(node);
+        addToHead(node);
+        return node.value;
+    }
+
+    public void put(int key, int value) {
+        if (map.containsKey(key)) {
+            removeNode(map.get(key));
+        }
+        if (map.size() == capacity) {
+            map.remove(tail.key);
+            removeNode(tail);
+        }
+        Node newNode = new Node(key, value);
+        addToHead(newNode);
+        map.put(key, newNode);
+    }
+}
+
+The place where we keep cache is important (we can keep it in server , we can keep a global cache , we can keep it in database). [Advantage/ disadvantage]
+
+The two main cache write policies are *** write-through and write-back. ****
+
+Write-Through Cache: In a write-through cache policy, whenever the processor modifies data in the cache, the change is immediately written to both the cache and the main memory. This ensures that the main memory always has the most up-to-date data.
+The steps involved in a write-through operation are as follows: a) The processor writes the data to the cache. b) The cache controller writes the same data to the main memory. c) The write operation is acknowledged to the processor after both the cache and main memory have been updated.
+
+Advantages of Write-Through:
+
+Data consistency: Since the main memory is always updated, data integrity is maintained in case of power failures or system crashes.
+Simple implementation: The cache controller does not need to keep track of which cache lines have been modified.
+Disadvantages of Write-Through:
+
+Increased memory traffic: Every write operation results in two writes (one to the cache and one to main memory), which can increase memory bandwidth usage and potentially degrade performance.
+Slower write operations: Write operations are slower because they must wait for the data to be written to both the cache and main memory before completing.
+
+
+Write-Back Cache: In a write-back cache policy, when the processor modifies data in the cache, the changes are initially written only to the cache. The modified data in the cache is written back to the main memory only when the cache line needs to be evicted (replaced) or when explicitly requested (e.g., during a cache flush operation).
+The steps involved in a write-back operation are as follows: a) The processor writes the data to the cache. b) The cache controller marks the cache line as "dirty" or "modified" to indicate that the data in the cache is more up-to-date than the data in main memory. c) When the cache line needs to be evicted or a cache flush is requested, the "dirty" cache line is written back to the main memory.
+
+Advantages of Write-Back:
+
+Reduced memory traffic: Since data is written to main memory only when necessary, memory bandwidth usage is reduced, potentially improving performance.
+Faster write operations: Write operations are faster because they only need to update the cache, without immediately updating main memory.
+Disadvantages of Write-Back:
+
+Data consistency issues: If there is a power failure or system crash before the "dirty" data in the cache is written back to main memory, data integrity may be compromised.
+More complex implementation: The cache controller needs to keep track of which cache lines have been modified and manage the write-back process.
+
+In general, write-back caches are more commonly used in modern systems because they offer better performance due to reduced memory traffic. However, write-through caches are still used in certain scenarios where data integrity is critical, such as in real-time systems or systems with strict data consistency requirements.
+
+
+*** Content delivery networks (CDN) ***
+
+All server give 2 types of data static(HTML page etc) and dynamic. 
+
+CDN are basically cached static content closed to geographical local of users which ensures faster delievery time.

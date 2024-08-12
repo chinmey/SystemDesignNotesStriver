@@ -1,0 +1,68 @@
+Authentication and authorization are two closely related but distinct security concepts. Here's the difference between them:
+
+Authentication:
+
+Authentication is the process of verifying the identity of a user, device, or system.
+It answers the question: *** "Who are you?" ***
+Authentication typically involves providing credentials, such as a username and password, biometric data (e.g., fingerprint or facial recognition), or other forms of identification.
+Common authentication methods include passwords, multi-factor authentication (MFA), digital certificates, and security tokens.
+Once the identity is successfully verified, the user or entity is considered authenticated.
+Authorization:
+
+Authorization is the process of determining what resources or actions an authenticated user, device, or system is allowed to access or perform.
+It answers the question: *** "What are you allowed to do?" ***
+Authorization is based on predefined rules, policies, or permissions that define the level of access granted to an authenticated entity.
+Authorization mechanisms control access to specific data, functions, or services within an application or system.
+Common authorization models include role-based access control (RBAC), attribute-based access control (ABAC), and access control lists (ACLs).
+
+
+Many websites offer us a option to complete signup/signin using google/fb, How does signup/signin using Google/Facebook work ?
+
+*** OAuth (Open Authorization) *** is an open standard for access delegation, which allows users to grant third-party applications or services access to their resources hosted by another service provider, without sharing their credentials. It is widely used for authorizing access to web applications, mobile apps, and APIs.
+
+The OAuth protocol works by delegating user authentication to the service that hosts the user's data (known as the authorization server or resource server), and allowing the third-party application (client) to access that data on behalf of the user. This is achieved through the following steps:
+
+User Authorization: The client application initiates the OAuth flow by redirecting the user to the authorization server, where the user authenticates and grants permission for the client to access their resources.
+
+Access Token Issuance: After the user grants permission, the authorization server issues an access token to the client application. This access token represents the user's authorization and is used by the client to access the user's resources.
+
+Resource Access: The client application uses the access token to make authenticated requests to the resource server (which may be the same as the authorization server or a separate service) to access the user's resources.
+
+OAuth provides several benefits:
+
+Improved Security: OAuth eliminates the need for users to share their credentials with third-party applications, reducing the risk of credential theft or misuse.
+
+Granular Access Control: OAuth allows users to grant specific permissions or scopes to third-party applications, limiting the access to only the resources required by the application.
+
+Standardization: OAuth is an open standard, which promotes interoperability and simplifies the integration of different services and applications.
+
+Revocation: Users can revoke access granted to third-party applications at any time, ensuring better control over their data.
+
+It has some disadvnatges:
+
+
+User data is shared across services
+There is no granular control (so if google auth is having a outage you are also having a outage)
+
+
+*** Token based authorization ***
+
+Tokens are a basic and commonly used method of authentication. The process involves a user sending their username and password to a server for verification. If the credentials match, the server generates a token, which is a piece of text signed by the server.
+
+The token represents the user's authorization and specifies the actions they are allowed to perform. The user can present this token to the server as proof of authentication and authorization without needing to provide their password again. The server can verify the token by using its private key to decrypt the signed text and confirm its authenticity.
+
+The private key is a secret number known only to the server, while the public key is shared with others. The public key can be used to decrypt the signed text and retrieve the authorization details. The token, being a signed piece of text, prevents unauthorized modifications.
+
+However, the token-based authentication method has some limitations. It does not protect against replay attacks or token theft. If someone intercepts the token, they can potentially use it to impersonate the user and perform actions on their behalf. Additionally, if the token is stored in an insecure location, it can be accessed by unauthorized individuals.
+
+
+*** Various authorization mechanisms used in systems: ***
+
+Access Control Lists (ACLs): ACLs are lists that define the actions that can be performed on objects. They can be user-based (a specific user has certain permissions), role-based (users with a particular role have certain permissions), or group-based (a group of users or resources have certain permissions). ACLs are grouped together to form the access control matrix of the system.
+
+Rule Engines: Rule engines involve using a set of rules, often implemented as if statements, to determine whether a user or resource has permission to perform an action. Rule engines are useful for handling complex authorization requirements and can handle multiple objects and rules efficiently. They are also helpful in centralizing common rules and allowing easy rule modifications without modifying ACLs.
+
+Secret Keys: Secret keys or client keys are an additional layer of security for authentication and authorization. They involve authenticating using a key or token rather than a username and password. This mechanism provides an extra level of security but is not considered ideal on its own
+
+
+

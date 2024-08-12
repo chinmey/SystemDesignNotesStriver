@@ -1,0 +1,77 @@
+
+ A messaging queue is a software component that allows different parts of an application or different applications to communicate asynchronously by sending messages to each other. It acts as an intermediary layer that decouples the sender from the receiver, enabling reliable and scalable communication between various components or services.
+
+Here are some key characteristics and benefits of using messaging queues in system design:
+
+Asynchronous Communication: Messaging queues enable asynchronous communication, where the sender does not need to wait for the receiver to be available or ready to process the message immediately. The sender simply sends the message to the queue, and the receiver can consume the message at its own pace.
+
+Decoupling: By introducing a messaging queue between components or services, the sender and receiver are decoupled from each other. This means that they can be developed, deployed, and scaled independently, reducing tight dependencies and increasing system flexibility.
+
+Reliability and Fault Tolerance: Messaging queues provide a reliable and fault-tolerant mechanism for message delivery. If a receiver is temporarily unavailable or experiences a failure, the messages are stored in the queue until the receiver becomes available again, preventing data loss.
+
+Load Balancing and Scalability: Messaging queues can help distribute workloads across multiple consumers or workers, enabling better load balancing and scalability. If the workload increases, additional consumers can be added to process messages from the queue more efficiently.
+
+Buffering and Throttling: Messaging queues can act as buffers, absorbing bursts of messages and smoothing out the flow of data between components. This can help prevent overloading or overwhelming downstream systems during peak loads.
+
+Messaging queues are commonly used in various scenarios, such as:
+
+Event-driven architectures: Components can publish events to a queue, and other components can subscribe to and consume those events.
+Task scheduling and processing: Long-running or resource-intensive tasks can be offloaded to a queue for asynchronous processing by dedicated workers or consumers.
+Distributed systems: Messaging queues facilitate communication and coordination between different services or microservices in a distributed architecture
+
+
+Basically instead of clients sending messages directly to servers , they send it to queue which than distributes it to servers , this allows for load 
+balancing , queue continue to send heartbeats to server and if they don't acknowledge they are not sent the request so it allows fault tolerance
+
+Message queue form a critical part of *** Event driven architectures. ***
+
+Note :: in a microservice world different services can be client of each-other also.
+
+Event-driven architecture and request-response model are two different approaches to designing and implementing systems, each with its own characteristics and use cases.
+
+Request-Response Model: The request-response model is a traditional client-server architecture where a client sends a request to a server, and the server processes the request and sends a response back to the client. This model is synchronous, meaning that the client waits for the server's response before proceeding with further actions.
+Characteristics of the request-response model:
+
+Synchronous communication: The client waits for the server's response before continuing.
+Tightly coupled: The client and server are tightly coupled, as the client needs to know the server's address and communication protocol.
+Direct communication: The client communicates directly with the server, without any intermediaries.
+Stateful: The server often maintains session state for each client.
+The request-response model is commonly used in web applications, RESTful APIs, and other scenarios where synchronous communication is required, and the client needs an immediate response.
+
+Event-Driven Architecture (Fire and Forget): In an event-driven architecture, components communicate by emitting and consuming events. An event is a notification that something of interest has occurred, and it can be produced by one component and consumed by one or more other components.
+Characteristics of event-driven architecture:
+
+Asynchronous communication: Components communicate by emitting and consuming events, without waiting for a direct response.
+Loose coupling: Components are decoupled from each other, as they don't need to know the details of other components that produce or consume events.
+Scalability: Components can be scaled independently, as they don't have direct dependencies on each other.
+Flexibility: New components can be added or removed without affecting the entire system, as long as they follow the event contract.
+
+Publisher-subsciber model used in twitter, yt , games etc can be done best with event-driven architecture.
+
+
+*** Anti-pattern(avoid) Using db as message queue ***
+
+Databases are often used to store various types of information, but one case where it becomes an a problem is when being used as a message broker.
+
+The database is rarely designed to deal with messaging features, and hence is a poor substitute of a specialized message queue. When designing a system, this pattern is considered an anti pattern. 
+
+Here are possible drawbacks:
+1) Polling intervals have to be set correctly. Too long makes the system is inefficient. Too short makes the database undergo heavy read load.
+2) Read and write operation heavy DB. Usually, they are good at one of the two.
+3) Manual delete procedures to be written to remove read messages.
+4) Scaling is difficult conceptually and physically.
+
+Disadvantages of a Message Queue:
+1) Adds more moving parts to the system.
+2) Cost of setting up the MQ along with training is large.
+3) Maybe be overkill for a small service.
+
+In a system design interview, it is important to be able to reason why or why not a system needs a message queue. These reasons allow us to argue on the merits and demerits of the two approaches.
+
+However, there are blogs on why Databases are perfectly fine as message queues too. A deep understanding of the pros and cons helps evaluate how effective they would be for a given scenario. 
+
+In general, for a small application, databases are fine as they bring no additional moving part to the system. For complex message sending requirements, it is useful to have an abstraction such as a message queue handle message delivery for us.
+
+In Rabbit MQ, the MQ pushes the messages to the consumer/consumers.
+In Kafka, the subscribers pulls the records from the topic.
+
