@@ -1,0 +1,81 @@
+
+*** Live Steaming App ****
+
+Video --TCP(RTMP)---- Transformation ---> MessageQueue  ---> Subscribers (Batch job runners) ---> Publish in a Message MessageQueue
+
+
+
+Job of transformer is to take a very high quality video and convert it to various other streammable qualities (ex 720p/360p). This would be done by batch job
+which would subscribe to a message queue which would be populated by transformation , once they are done they would send it to another queue and so on.
+
+
+*** Instagram ***
+
+1) Posting    2) Liking/Commenting    3) Follows/Following       4) Feed 
+
+
+
+First three are designed using tables think about how will u make the table (Posts/Likes/Commnets/Activity(to know like_count etc))
+
+
+For feed , Gateway (Reverse Proxy) ---> Feed service ----> Post Service & FOllower Service 
+
+You would get last 5 posts from your following and show it , this could be slow and have wasteful computation instead we should do it once and cache it 
+so we precompute this and make changes once following posts etc.
+
+For notifications , it would be push (for normal people) and pull (for celebrity or push with batching).
+
+
+
+*** Tinder ***
+
+
+1) Storing profiles (5 images per profile)   2) Recommended matches   3) Liked Me     4) Direct Messaging 
+
+
+While storing image question always is how to store using file (lower quality)/ blob (binary large object-- high quality). We prefer file way which stores images as objects in db and provides a url to get them. We can built a CDN over it which caches this URL and related image in edge servers
+
+
+For messaging case , it is little unique because it's a client-client communication, client-server (server never initiases it only responds), so we use XMPP.
+(Extensible Messaging and Presence Protocol) with a web-socket or TCP
+
+
+For recomemndation we would have categories like age, gender etc . main issue is with location how to get people close to me we would need to shard our db 
+based on location or use a NO-SQL db which provides it like casandra/dynamo.
+
+
+
+*** Whatsapp ***
+
+
+1) Direct messaging    2) Group messaging   3) Read receipt    4) Image sharing     5) Chats are permanent/temporary
+
+
+Read-receipt can be made using acknowledgment which are shared between servers (since communication would be using web-socket which is built on TCP)
+
+In our application users would be connected to gateway(s) , we would keep session service which knows which user is connected to which gateway. That we can 
+use for group messaging.
+
+
+
+*** Tik/Tok ***
+watch video
+
+
+*** Online judge ***
+
+Message queue for submitting answer --> container for running code
+
+
+*** UPI ***
+
+Our upi id is like a IP address , where each upi belongs to bank account --> this is maintained by NPCI
+
+PIN/Biometrics etc is used for authentication/authorization
+
+
+Sender ---> My Bank --> it gets authenticated etc at source bank ---> NPCI ---> Receiver bank 
+
+Banks can also cache some of inputs (like you transferring to your top 20 friends) , NPCI comes into place only when banks don't have cache.
+
+

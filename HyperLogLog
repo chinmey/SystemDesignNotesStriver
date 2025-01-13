@@ -1,0 +1,47 @@
+PS :: Design a system to count number of unique elements connected to our service (ex number of connections/ number if unique searches etc) 
+
+
+One way would be to store each deviceId and online status in a db , and run a SQL query to get total number of unique elements (very slow)
+
+Some imporvements could be to keep a seperate hashTable etc for online users and return its count we can use sharding etc and consistent hashing to ensure 
+same user goes to same shard as much as possible 
+
+So we need to use a approximation algo called Hyperloglog
+
+We can make a observation if we see throught all UserId and max number of zeroes which occur in rightMost bits is 3 than approx number of users is pow(2,x)
+which is 8 
+
+So we will go to all sharded databases/server and ask what is most rightMost zeros you saw, say this is what it came back with 
+
+1000, 1100, 1010 (so max is 3 answer is 8 )
+
+This creates a high variance so what we can do is use some digits as buckets and take avergae of that also
+
+
+**** Splitwise Simplify feature ****
+
+1. Parse transactions into a list of (payer, payee, amount).
+
+Example:
+
+Transactions:
+Alice → Bob: $10
+Bob → Charlie: $5
+Net Balances:
+Alice: -10
+Bob: +5
+Charlie: +5
+
+2. Simplification Algorithm
+Use a priority queue (or heap) to manage users with positive and negative balances.
+Match users with the highest debt and credit:
+Take the user with the maximum credit and the user with the maximum debt.
+Settle the smaller of the two balances with a transaction.
+Update their balances and repeat until all balances are zero.
+
+3. Output Simplified Transactions
+
+Simplified Transactions:
+Alice → Charlie: $5
+Alice → Bob: $5
+

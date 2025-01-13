@@ -9,7 +9,7 @@ The important task becomes to decide when do we load data in cache and when do w
 LRU, Sliding window
 
 
-Pseudo code LRU cache 
+Pseudo code LRU cache :: follow the one from DSA section uses map<int, pair<int,list<int>::iterator>> mp; {key, pair, position_key_list} list<int> keys
 
 // Node class to represent a key-value pair
 class Node {
@@ -82,8 +82,11 @@ The place where we keep cache is important (we can keep it in server , we can ke
 
 The two main cache write policies are *** write-through and write-back. ****
 
-Write-Through Cache: In a write-through cache policy, whenever the processor modifies data in the cache, the change is immediately written to both the cache and the main memory. This ensures that the main memory always has the most up-to-date data.
-The steps involved in a write-through operation are as follows: a) The processor writes the data to the cache. b) The cache controller writes the same data to the main memory. c) The write operation is acknowledged to the processor after both the cache and main memory have been updated.
+Write-Through Cache: In a write-through cache policy, whenever the processor modifies data in the cache, the change is immediately written to both the cache 
+and the main memory. This ensures that the main memory always has the most up-to-date data.
+The steps involved in a write-through operation are as follows: a) The processor writes the data to the cache. 
+b) The cache controller writes the same data to the main memory. 
+c) The write operation is acknowledged to the processor after both the cache and main memory have been updated.
 
 Advantages of Write-Through:
 
@@ -115,3 +118,22 @@ In general, write-back caches are more commonly used in modern systems because t
 All server give 2 types of data static(HTML page etc) and dynamic. 
 
 CDN are basically cached static content closed to geographical local of users which ensures faster delievery time.
+
+
+*********
+
+
+RocksDB stores value in terms of byte array so normal rocksdb fetch would give the value in byte array --> converted to json (standard java) --> c
+onverted to POJO (jackson ) --> application logic to desired form --> User 
+
+Object cache (like guava) will store the POJO (basically Jackson output) directly for a key so that the calls below it are not made 
+If object cache hit the flow is : Request --> ObjectCache we get the POJO --> application logic to desired form --> USER
+
+Kryo operates at a level lower than this , it stores the deserialzied output of byte array so we essentially skip the part of Jackson and it can convert this 
+deserialzied form to POJO 
+
+If kryo cache hit the flow is : Request --> Kryo cache (we get serialized response) and we convert it to POJO --> app logic --> USER
+So it essentially replaces byte Array <--> POJO
+
+Without Kryo: RocksDB (byte array) → JSON → POJO (Jackson)
+With Kryo: RocksDB (byte array) ↔ POJO (Kryo)

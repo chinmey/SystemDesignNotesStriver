@@ -1,0 +1,39 @@
+*** How does chat-gpt process Info ***
+
+There would be a crawler which scans pages in public information and does a BFS scan on all outgoing hyperlinks to some depth (say level 20)
+So for a page you will have all text info now (info on page and upto 20 level of its hyperlinks) these are convered to embeddings
+
+Embeddings are numerical representations (vectors) of data, where similar pieces of information are mapped to nearby points in high-dimensional space.
+For example, in ChatGPT:
+Text inputs like "cat" and "feline" might have similar embeddings since they are semantically related.
+
+Vector database store these embeddings in n dimensional plane and it stores similar embeddings close so when a user asks a question its converted to embeddings and we get all relevant data by looking at nearby embeddings
+
+In a simplified world i say can i have a 3 dimensional array as emdeiing for each word ex cat could be 000 feline would be 001 but internet would be far like 111 
+
+When a user asks a question, such as "Tell me about cats," the query is tokenized (broken down into smaller components like words or subwords).
+
+For instance:
+
+"Tell me about cats" → Tokenized into: ["Tell", "me", "about", "cats"]
+
+Each token in the query gets converted into embeddings. These embeddings represent the meaning of the word in a vector space. Let's say:
+
+"cats" → Embedding [0.12, -0.5, ..., 0.87]
+"tell" → Embedding [0.1, -0.2, ..., 0.1]
+"me" → Embedding [0.05, 0.03, ..., 0.1]
+These embeddings might be pre-trained (using Word2Vec BERT, etc.) or learned during a transformer-based model like GPT, which creates contextual embeddings (the meaning depends on the surrounding context).
+
+Contextual Understanding (for ChatGPT)
+In models like GPT, the embeddings are contextual. This means the same word ("cat") can have different meanings based on context:
+
+"The cat is on the mat" → Meaning of "cat" in this context is more about an animal.
+"He is acting like a cool cat" → Here "cat" is more about attitude or behavior.
+The model doesn't just look at "cats" in isolation, but understands its relationship with other words in the sentence.
+
+Transformers (like GPT) use self-attention to figure out how each word relates to all other words in the sentence. It then combines the embeddings, keeping track of word order, syntax, and meaning.
+
+Finding Closest Embeddings (we can use eucladiean distance or dot product etc) and combining them to get answer
+
+
+One question could be how is embedding generated so we can have some sort of function which takes in all text info and does a map reduce on it to get relevant infos

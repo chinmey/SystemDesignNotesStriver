@@ -1,0 +1,15 @@
+
+
+Client ---> LoadBalancer ---> Publish conversion event --> Message Queue
+               |        
+               |
+               |
+               |
+    rate Limiter/Security checker
+
+
+Client will call a load balancer with request , load balancer would be connected with a rate limiter and/or a security checker to ensure file is safe 
+
+LB will post this in message queue which will be connected to a series of conveteers , these converters would indeed publishe the converted file in a queue and our server will listen to the queue , LB will make a call to server to get the converted file 
+
+Server will store the converterd file to a File Server/DB for paid customers
