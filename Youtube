@@ -1,0 +1,93 @@
+This will be divided into 2 halfs 
+
+
+*** Top-k Yt vidoes ***
+
+Question :: Design a service that gives top-k most viewed videos on yt, we should also be able to do this for fixed windows ex day, hour etc
+
+
+1.a Functional requirements
+
+Query top-k viewed vidoes (k could be 1000)
+Accept a time period parameter (this would be anchored on current time ex last 1 hour , last 1 day/ all time etc )
+
+1.b Non-functional requirement
+
+How long a view comes on video and it needs to be counted ex 1 min 
+Latency should be low to get top-k vidoes
+
+
+2. Core Entities
+
+View 
+Videos 
+Window 
+
+3. API 
+
+GET : /views/video?k={number}?window={time} --> [{videoId, views}, {}, {}]
+
+4. HLD 
+
+We need to solve issue of counters (counting views) and querying , lets start by trying to solve the problem of (top k videos all time ) first
+
+
+We would have a view stream (kafka topic or SQS something) that registers all views , in our service we would have 2 components one view manager which listens
+to this and updates views , heap to measure top-k views 
+
+When client calls us we make a call to get top-k views from heap and return 
+
+Our service is not fault tolerant to ensure that we should do checkpointing (using kafka we can know what was last id counted etc we store that)
+
+Another thing is the service we have can be shareded based on regions so each shard counts and maintains views info from each region now what we can do 
+is add a component which combines views info from all shards which is called first by LB which internally calls all shards
+
+
+Now once basic system is done we need to figure out how to handle time window 
+
+
+
+
+*** Youtube System design ***
+
+
+Main requirements are 
+
+users should be able to upload video 
+users should be able to stream(watch) video 
+
+
+When we upload a video, we need to consider a few fundamental things:
+Where do we store the video metadata (name, description, etc.)?
+Where do we store the video data (frames, audio, etc.)?
+What do we store for video data?
+
+We take insipration from dropbox , for 1 and 2 we can use pre-signed URL with multi-part upload for this 
+
+For third we will do some post processing of videos before storing also 
+
+
+This approach post-processes videos by splitting them into small segments (each a playable unit thats a few seconds in length) and then converts 
+each segment into different formats playable on different devices. 
+This is a strictly better design than the previous design because it enables more efficient video streaming later, 
+which we will clarify as we design our system.
+
+By formats here we mean type of compression (H-264 or VP9 etc) and type of container (MP4, WebM)
+
+
+For watching the video 
+
+Adaptive bitrate streaming relies on having stored segments of videos in different formats. It also relies on a manifest file being created during 
+video upload time, which references all the video segments that are available in different formats. 
+Think of a manifest file as an "index" for all the different video segments with different formats; 
+it will be used by the client to stream segments of video as network conditions vary
+
+The client will execute the following logic when streaming the video:
+The client will fetch the VideoMetadata, which will have a URL pointing to the manifest file in S3.
+The client will download the manifest file.
+The client will choose a format based on network conditions / user settings. 
+The client retrieves the URL for this segment in its chosen format from the manifest file. The client will download the first segment.
+The client will play that segment and begin downloading more segments.
+If the client detects that network conditions are slowing down (or improving), it will vary the format of the video segments it is downloading. 
+If network conditions get worse (e.g. the bitrate is lower), the client will attempt to download more compressed, 
+lower resolution segments to avoid any interruption in streaming.

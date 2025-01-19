@@ -1,0 +1,82 @@
+How to manage critical section (shared resource) of code ?
+
+Ex in a scanerio where multiple users are trying to buy same movie ticket 
+
+{
+    Seat with Id : 10
+
+    if free 
+
+    Logic to change status from free to booked 
+
+    update DB 
+}
+
+Say 100 users are concurrently trying to access this code all of them will get allocated same seat
+
+1. Basic solution is use syncronised block to allow only one thread at a time but this fails the reason is syncronised works with threads from same 
+process (within same JVM) , in a distributed system we have multiple proceeses itself (on possibly different machines)
+
+*** Summary : syncronised keyword can handle concurrent things not parallel things ***
+
+2. In distributed system we can use either *** Db locking , optimistic concurreny control or pessimist CC or Distributed locking (ex Apache Zookeeper/ Redis)**
+
+Let us understand some basics first 
+
+What is usage of Transcation ?
+
+Transcation is a way to ensure system remains consistent as it forces each change to be atomic so if part of change fails it would fail the whole process
+Ex think of a case where rs 10 is debited and credited somewhere if either fail other is rolledback ensuring system is always consistent
+
+What is DB locking ?
+
+Mechanism by which certain rows are locked and only those holding lock can update the row value
+
+What is isolation level ?
+
+Discussed in data consisteny part top types are read uncommited read commited
+
+Repetable reads (Optimistic concurrency/ Snapshot concurrency)
+
+What we do here is that when one trasaction reads a row it creates a snapshot of that row and its remains unchanged during transcation ( so only it can update the row value), if multiple transcations read same row they will create different snapshot of same row now if multiple update the value we would need to rollback all except one , that is why this is called optimistic concurreny as we are optimisic about concurreny unless proved otherwise
+
+
+Serializable (Pessimist concurreny)
+
+Every transacation goes serially
+
+Another way could be to maintain some version number with resouce and increase it with each change
+
+
+**Two-Phase Locking (2PL) **** is a concurrency control method used to ensure serializability in database transactions. It divides the execution of a transaction into two phases:
+
+Growing Phase (Acquiring Locks):
+
+The transaction acquires all the locks it needs without releasing any locks.
+This includes both shared locks (for reading) and exclusive locks (for writing).
+Shrinking Phase (Releasing Locks):
+
+The transaction releases locks and cannot acquire any new locks.
+Key Points about 2PL:
+
+Not Just Exclusive Locks:
+
+2PL involves both shared (read) and exclusive (write) locks.
+A transaction might acquire several shared locks and then upgrade some to exclusive locks before making changes.
+Lock Types:
+
+Shared Lock: Multiple transactions can hold shared locks on the same item simultaneously (for reading).
+Exclusive Lock: Only one transaction can hold an exclusive lock on an item (for writing).
+Lock Acquisition:
+
+Locks are acquired as needed throughout the growing phase, not all at once at the beginning.
+Lock Release:
+
+Locks are typically held until the end of the transaction (in the most common variant, Strict 2PL).
+Deadlock Potential:
+
+2PL can lead to deadlocks, which need to be detected and resolved.
+Variations:
+
+Strict 2PL: All locks are held until the transaction commits or aborts.
+Strong Strict 2PL: Write locks are held until commit/abort, read locks can be released earlier.

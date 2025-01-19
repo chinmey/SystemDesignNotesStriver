@@ -18,6 +18,26 @@ As seen bloom filter is a probabilistic ds , meaning if the results of hash func
 guarantee, but major advantage is if results don't match it is a guarantee that strings are not same.
 
 
+*** Count Min Sketch ***
+
+The Count-Min Sketch (CMS) is a probabilistic data structure used for efficiently counting frequencies of elements in a data stream while using limited memory. It is particularly useful when exact counts are not necessary, but you want to maintain approximate counts with guaranteed error bounds.
+
+Structure:
+
+2D array (matrix) of size w × d
+w = width (counters per row)
+d = depth (number of hash functions)
+Initialization:
+
+All counters set to 0
+d pairwise independent hash functions chosen
+Insertion Process:
+
+For each element x:
+Compute d hash values: h₁(x), h₂(x), ..., hd(x)
+Increment counters at positions (1, h₁(x)), (2, h₂(x)), ..., (d, hd(x))
+
+
 *** Data Replication ***
 
 
@@ -66,11 +86,37 @@ So we want the write of LL but not its read , so we can use a sorted array for s
 
 How ?
 
-Server --> logs(LL) ---> flushed at once to --> db (converts it to array) , so now each time we get a flush we need to merge it to our existing array
+Server --> logs(LL) {LSM tree} data is stored in memory in MemTables ---> flushed at once to (sst) --> db (converts it to array) , so now each time we get a flush we need to merge it to our existing array
 over time as array size grows this could become very slow so after some size we store next flush as a different file(chunk) in db this is to avoid reinserting
 and sorting whole data again and again , so when it comes to reading we just go thru all chunks , this is called sorted string table (sst)
 
+This is how rocksDB works
+
 We can apply boom filter on top of this to make it even faster
+
+
+***** SAGA pattern *********************
+
+In microservice world we can have 2 designs let all service share database or let each service have seperate databases
+
+With common db we have same issues as with Microservice v Monolith 
+
+Say one service has large traffic we cant scale its db independently, also data is shared say if we want to delete some data we need to ensure its not 
+used by one of other service etc
+Advantage is that maintaining ACID property running complex query etc is easier since db are shared
+
+
+Now when all services have their own db we can easily maintain ACID individually but a transacation would span multiple dbs how to maintain ACID there,
+this is solved with (SAGA) also writing queries involving tables from multiple dbs we use (CQRS) 
+
+
+SAGA (Sequence of Local transacation) --> Say we have 2 dbs (order/payment) once order is made both need update now for ex order is success but payment 
+fails we need a way to rollback order also now
+
+Sequence of Local Transactions: SAGA breaks down a distributed transaction into a sequence of local transactions, each performed by a single service.
+Compensating Actions: For each local transaction, SAGA defines a compensating action that can undo the changes if the overall transaction fails.
+Coordination: A coordinator (either centralized {we have a service specifacally for orcestration} or choreographed {services talk to each other}) 
+manages the execution of local transactions and compensating actions.
 
 
 ******* Location based database ******************************

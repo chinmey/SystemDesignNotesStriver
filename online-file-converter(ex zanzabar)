@@ -13,3 +13,245 @@ Client will call a load balancer with request , load balancer would be connected
 LB will post this in message queue which will be connected to a series of conveteers , these converters would indeed publishe the converted file in a queue and our server will listen to the queue , LB will make a call to server to get the converted file 
 
 Server will store the converterd file to a File Server/DB for paid customers
+
+
+
+
+
+*** TinyURL ***
+
+
+Creating a short hash or identifier for a service like TinyURL with 7 characters involves several considerations. Here's an approach you could take:
+
+Character Set: First, decide on your character set. A common choice is to use:
+
+Lowercase letters (a-z): 26 characters
+Uppercase letters (A-Z): 26 characters
+Numbers (0-9): 10 characters This gives a total of 62 possible characters.
+Possible Combinations: With 7 characters and 62 possible characters for each position, you have: 62^7 = 3,521,614,606,208 possible unique combinations
+
+Generation Method: There are several ways to generate the 7-character hash:
+
+a) Random Generation:
+
+Generate 7 random characters from your character set.
+Check if it already exists in your database. If it does, generate a new one.
+
+b) Base62 Encoding:
+
+Assign an incrementing number to each URL.
+Convert this number to base 62 using your character set.
+Pad the result to 7 characters if needed.
+
+c) Hash and Truncate:
+
+Hash the original URL using a cryptographic hash function (e.g., SHA-256).
+SHA-256 , means 256 bits --> 32 bytes --> 64 character hexadecimal (A-F 0-9)
+Take the first 7 characters of the hash.
+If there's a collision, rehash or use a different portion of the hash.
+
+
+*** Key/value pair like redis/memcache etc ***
+
+
+Talk about caching code (LRU) + consistent hashing for distributed hashing
+
+If we have to build a whole db like (Dynamo) we should talk about data replication which allows system to be available at all time in this what we can do 
+is define a N ex 3 than once we get which server the key needs to be mapped to via consistent hashing the next N-1 servers will also keep that value (replicated)
+
+
+*** Rate Limiter ***
+
+
+Question is how can we design a rate limiter ? 
+
+Requirements:
+
+Limit requests based on client identifier (IP, API key, user ID)
+Support different limits for different endpoints or user tiers
+Minimal latency impact
+Distributed system compatibility
+Scalability to handle high traffic
+
+> Token Bucket: we have a bucket which holds fixed number of token , initially bucket has x tokens , when each request comes it consumes a token , if bucket is empty that request is rejected . We have a refilling service also which fills token back in bucket at some rate
+
+> Leaky Bucket: Models a bucket with a constant outflow rate and a maximum capacity. Requests are added to the bucket. Bucket "leaks" at a constant rate.
+If bucket is full, new requests are rejected.
+
+> Fixed window counter :: allows fixed number of requests in a time window, resets counter in each new window 
+
+> SLiding window counter :: Assign a timestamp to each request if another request is sent while the previous request is still in window we dont allow that 
+
+Assume a limit of 10 requests per minute:
+
+Fixed Window:
+
+Minute 1: 0:00 - 0:59, 10 requests allowed
+Minute 2: 1:00 - 1:59, 10 requests allowed
+A user could potentially send 10 requests at 0:59 and another 10 at 1:01, getting 20 requests through in 2 seconds.
+
+Leaky Bucket:
+
+Constant outflow of 1 request per 6 seconds
+Even if 20 requests arrive in 2 seconds, only 2 would be processed, and the rest would be either queued (if space in bucket) or rejected
+
+
+Implementation Steps: a. Choose an algorithm (e.g., Token Bucket) b. Set up Redis for storing counters/tokens c. Implement Rate Limiter Service d. Integrate with API Gateway
+
+API Gateway: Intercepts incoming requests, Calls Rate Limiter Service
+
+
+
+*** Idempotent POST API ***
+
+Designing an idempotent POST API is an important consideration in RESTful design, especially when dealing with scenarios where requests might be repeated due to network issues or client retries. Here's a comprehensive approach to designing an idempotent POST API:
+
+Understand Idempotency:
+
+An operation is idempotent if the result of performing it once is exactly the same as performing it multiple times.
+For POST requests, which typically create resources, achieving idempotency requires careful design. (GET etc is already idempotent)
+Key Strategies:
+
+a. Use Client-Generated IDs:
+
+Have the client generate and send a unique ID with each request.
+Server checks if a resource with this ID already exists before creating a new one.
+
+b. Use Conditional POST:
+
+Similar to conditional GET, but for POST requests.
+Use headers like If-None-Match to check if the resource already exists.
+
+c. Implement Idempotency Keys:
+
+Client sends an idempotency key with each request.
+Server ensures that requests with the same key are processed only once
+
+
+*** Designing a highly available system ****
+
+
+Key Principles: a. Eliminate Single Points of Failure (SPOF) b. Implement Redundancy c. Ensure Fault Isolation d. Enable Fast Recovery e. Design for Scalability
+
+Architecture Components:
+
+a. Load Balancers:
+
+Distribute traffic across multiple servers
+Perform health checks and remove unhealthy instances
+b. Redundant Servers:
+
+Deploy multiple instances of application servers
+Use auto-scaling groups to maintain capacity
+c. Distributed Databases:
+
+Implement database replication (Master-Slave or Multi-Master)
+Use sharding for horizontal scalability
+d. Caching Layer:
+
+Implement distributed caching (e.g., Redis, Memcached)
+Reduce load on primary data stores
+e. Content Delivery Network (CDN):
+
+Distribute static content globally
+Reduce latency and improve availability for static assets
+f. Message Queues:
+
+Decouple components using message queues (e.g., RabbitMQ, Kafka)
+Enable asynchronous processing
+g. Service Discovery:
+
+Implement service registry and discovery (e.g., Consul, Etcd)
+Enable dynamic routing and load balancing
+Strategies for High Availability:
+
+a. Geographic Distribution:
+
+Deploy across multiple regions/availability zones
+Implement global load balancing (e.g., DNS-based routing)
+b. Data Replication:
+
+Synchronous replication for critical data
+Asynchronous replication for less critical data
+c. Failover Mechanisms:
+
+Implement automatic failover for databases and services
+Use leader election in distributed systems
+d. Circuit Breakers:
+
+Prevent cascading failures by failing fast
+Implement retry mechanisms with exponential backoff
+e. Monitoring and Alerting:
+
+Implement comprehensive monitoring (e.g., Prometheus, Grafana)
+Set up alerts for critical metrics and thresholds
+f. Disaster Recovery Plan:
+
+Regular backups with quick restore capabilities
+Implement and test disaster recovery procedures
+Implementation Example (High-Level Pseudo Architecture):
+
+[Users] -> [Global Load Balancer (DNS)]
+                 |
+    +------------+------------+
+    |                         |
+[Region A]               [Region B]
+    |                         |
+[Load Balancer]          [Load Balancer]
+    |                         |
++---+---+               +-----+-----+
+|       |               |           |
+[Web 1] [Web 2]         [Web 3] [Web 4]
+    |       |               |           |
+    +---+---+               +-----+-----+
+        |                         |
+[Cache Cluster]           [Cache Cluster]
+        |                         |
++-------+-------+         +-------+-------+
+|               |         |               |
+[DB Primary] [DB Replica] [DB Primary] [DB Replica]
+
+
+*** reverse index ***
+
+A reverse index (also known as an inverted index) is a data structure that maps content (like words, attributes, or tokens) to the locations where they appear, enabling efficient searches. It’s widely used in search engines, databases, and full-text search systems to optimize querying.
+
+How a Reverse Index Works
+Data is Tokenized:
+The original data (e.g., documents, files, or database entries) is broken down into smaller components, such as words or keywords (tokens).
+Index is Built:
+For each token, the reverse index stores a mapping of the token to all the locations where it appears.
+Querying is Efficient:
+When a query is made, the reverse index is used to quickly retrieve the matching data, instead of scanning the entire dataset.
+Reverse Index in Action
+Example: Search Engine
+Suppose we have the following documents:
+
+Document 1: "The quick brown fox"
+Document 2: "The lazy dog"
+Document 3: "The fox and the dog"
+Step 1: Tokenization Break each document into individual words:
+
+Document 1: ["The", "quick", "brown", "fox"]
+Document 2: ["The", "lazy", "dog"]
+Document 3: ["The", "fox", "and", "the", "dog"]
+Step 2: Build the Reverse Index Create a mapping of words to document IDs:
+
+plaintext
+Copy
+Edit
+Word       → Documents
+-----------------------
+"The"      → [1, 2, 3]
+"quick"    → [1]
+"brown"    → [1]
+"fox"      → [1, 3]
+"lazy"     → [2]
+"dog"      → [2, 3]
+"and"      → [3]
+Step 3: Query
+
+Query: "dog"
+Result: Use the reverse index to find all documents containing "dog": [2, 3].
+
+This is example of inverted indexes.

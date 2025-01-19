@@ -22,11 +22,11 @@ Many websites offer us a option to complete signup/signin using google/fb, How d
 
 The OAuth protocol works by delegating user authentication to the service that hosts the user's data (known as the authorization server or resource server), and allowing the third-party application (client) to access that data on behalf of the user. This is achieved through the following steps:
 
-User Authorization: The client application initiates the OAuth flow by redirecting the user to the authorization server, where the user authenticates and grants permission for the client to access their resources.
-
-Access Token Issuance: After the user grants permission, the authorization server issues an access token to the client application. This access token represents the user's authorization and is used by the client to access the user's resources.
-
-Resource Access: The client application uses the access token to make authenticated requests to the resource server (which may be the same as the authorization server or a separate service) to access the user's resources.
+a. The client(resource asking website) requests authorization from the resource owner(user)
+b. The resource owner grants authorization
+c. The client requests an access token from the authorization server 
+d. The authorization server authenticates the client and issues an access token 
+e. The client uses the access token to access protected resources on the resource server
 
 OAuth provides several benefits:
 
@@ -54,6 +54,15 @@ The token represents the user's authorization and specifies the actions they are
 The private key is a secret number known only to the server, while the public key is shared with others. The public key can be used to decrypt the signed text and retrieve the authorization details. The token, being a signed piece of text, prevents unauthorized modifications.
 
 However, the token-based authentication method has some limitations. It does not protect against replay attacks or token theft. If someone intercepts the token, they can potentially use it to impersonate the user and perform actions on their behalf. Additionally, if the token is stored in an insecure location, it can be accessed by unauthorized individuals.
+
+Comparison: JWT vs. Session Token
+Aspect	JWT	Session Token
+State	Stateless (self-contained)	Stateful (server-side session store)
+Scalability	Easy to scale horizontally	Harder to scale (requires shared storage)
+Revocation	Harder (cannot easily invalidate token)	Easy (delete session from store)
+Storage	Typically stored in client-side storage (e.g., cookies, localStorage)	Stored on server
+Security	Vulnerable to client-side misuse (if stored insecurely)	Secure (data stays on the server)
+Use Cases	APIs, microservices, stateless systems	Traditional web apps, centralized systems
 
 
 *** Various authorization mechanisms used in systems: ***

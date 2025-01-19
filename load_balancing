@@ -64,6 +64,57 @@ However, some requests in the range of 60-75 may be remapped to Server 5 if thei
 
 key difference is server 1 points to 4 points on ring If it pointed to only one we would still have situation similar to modulo hashing
 
+**** Another example  *****
+
+Let's imagine a consistent hashing ring with 1000 data items and 4 servers (A, B, C, D). Then we'll add server E and see how it affects the distribution.
+
+Initial Setup:
+
+Hash Space:
+
+The hash space is a circle from 0 to 359 (for simplicity, we'll use degrees).
+Server Placement:
+
+Server A: 0°
+Server B: 90°
+Server C: 180°
+Server D: 270°
+Data Distribution:
+
+Each data item is hashed to a position on the ring.
+Items are assigned to the next server clockwise.
+Roughly 250 items per server (1000/4).
+Initial Distribution:
+
+Server A: handles items from 271° to 0°
+Server B: handles items from 1° to 90°
+Server C: handles items from 91° to 180°
+Server D: handles items from 181° to 270°
+Now, let's add Server E:
+
+Adding Server E:
+
+Let's say Server E hashes to 45°.
+New Distribution:
+
+Server A: handles items from 271° to 0° (unchanged)
+Server E: handles items from 1° to 45° (new range)
+Server B: handles items from 46° to 90° (reduced range)
+Server C: handles items from 91° to 180° (unchanged)
+Server D: handles items from 181° to 270° (unchanged)
+Remapping:
+
+Only the items that were previously handled by Server B and fall between 1° and 45° need to be remapped to Server E.
+This is approximately 1/8 of Server B's original items (45° is half of B's original 90° range).
+So, about 250/8 ≈ 31 items need to be remapped.
+Result:
+
+Server A: ~250 items (unchanged)
+Server E: ~31 items (new)
+Server B: ~219 items (reduced from 250)
+Server C: ~250 items (unchanged)
+Server D: ~250 items (unchanged)
+
 *** Database Sharding ***
 
 

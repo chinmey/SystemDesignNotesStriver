@@ -11,72 +11,48 @@ LRU, Sliding window
 
 Pseudo code LRU cache :: follow the one from DSA section uses map<int, pair<int,list<int>::iterator>> mp; {key, pair, position_key_list} list<int> keys
 
-// Node class to represent a key-value pair
-class Node {
-    int key;
-    int value;
-    Node prev;
-    Node next;
-    Node(int key, int value) {
-        this.key = key;
-        this.value = value;
-        prev = null;
-        next = null;
-    }
-}
-
-// LRU Cache class
 class LRUCache {
-    private int capacity;
-    private Map<Integer, Node> map;
-    private Node head;
-    private Node tail;
-
-    private void removeNode(Node node) {
-        Node prev = node.prev;
-        Node next = node.next;
-        if (prev != null) prev.next = next;
-        if (next != null) next.prev = prev;
-        if (node == head) head = next;
-        if (node == tail) tail = prev;
+public:
+    list<int> keys;
+    map<int, pair<int, list<int>::iterator>> mp; // {key, value, position in list}
+    int c = 0;
+    LRUCache(int capacity) {
+        c = capacity;
     }
 
-    private void addToHead(Node node) {
-        node.next = head;
-        node.prev = null;
-        if (head != null) head.prev = node;
-        head = node;
-        if (tail == null) tail = node;
+    void refreshPosition(int key) {
+        keys.erase(mp[key].second);
+        keys.push_front(key);
+        mp[key].second = keys.begin();
     }
-
-    public LRUCache(int capacity) {
-        this.capacity = capacity;
-        map = new HashMap<>();
-        head = null;
-        tail = null;
-    }
-
-    public int get(int key) {
-        if (!map.containsKey(key)) return -1;
-        Node node = map.get(key);
-        removeNode(node);
-        addToHead(node);
-        return node.value;
-    }
-
-    public void put(int key, int value) {
-        if (map.containsKey(key)) {
-            removeNode(map.get(key));
+    
+    int get(int key) {
+        
+        if(mp.find(key) != mp.end()) {
+            refreshPosition(key);
+            return mp[key].first;
         }
-        if (map.size() == capacity) {
-            map.remove(tail.key);
-            removeNode(tail);
-        }
-        Node newNode = new Node(key, value);
-        addToHead(newNode);
-        map.put(key, newNode);
+
+        return -1;
     }
-}
+    
+    void put(int key, int value) {
+        
+        if(mp.find(key) != mp.end()) {
+            mp[key].first = value;
+            refreshPosition(key);
+        } else {
+            keys.push_front(key);
+            mp[key] = {value, keys.begin()};
+
+            if(c < keys.size()) {
+                int lastKey = keys.back();
+                mp.erase(lastKey);
+                keys.pop_back();
+            }
+        }
+    }
+};
 
 The place where we keep cache is important (we can keep it in server , we can keep a global cache , we can keep it in database). [Advantage/ disadvantage]
 
@@ -134,6 +110,13 @@ deserialzied form to POJO
 
 If kryo cache hit the flow is : Request --> Kryo cache (we get serialized response) and we convert it to POJO --> app logic --> USER
 So it essentially replaces byte Array <--> POJO
+
+*** Correction ***
+
+Kryo doesn’t store "deserialized output" but rather stores serialized binary data that can be quickly deserialized into the original POJO. This eliminates the need for Jackson and JSON conversions altogether.
+
+Kryo is a high-performance serialization framework that operates at a binary serialization level, as opposed to JSON (text-based serialization).
+If you use Kryo as a cache serializer, the serialized form stored in the cache is not JSON, but a Kryo-serialized binary format. This allows faster deserialization compared to JSON-based approaches.
 
 Without Kryo: RocksDB (byte array) → JSON → POJO (Jackson)
 With Kryo: RocksDB (byte array) ↔ POJO (Kryo)

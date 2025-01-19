@@ -1,0 +1,63 @@
+An Ad Click Aggregator is a system that collects and aggregates data on ad clicks. It is used by advertisers to track the performance of their ads and optimize their campaigns. For our purposes, we will assume these are ads displayed on a website or app, like Facebook.
+
+
+Ad-click aggregator is a infra related problem and not necessary a product(user facing) one , so it will not have Core entity and API endpoints generally
+instead we have System interface and data flow
+
+1.a Functional requirements 
+
+Users can click on an ad and be redirected to the advertiser's website
+Advertisers can query ad click metrics over time with a minimum granularity of 1 minute
+
+in this type of problems having scale is also needed we can think of 10M ads , 10k click per second
+
+1.b Non-functional requirements
+
+Scalable to support a peak of 10k clicks per second
+Low latency analytics queries for advertisers (sub-second response time)
+Fault tolerant and accurate data collection. We should not lose any click data.
+As realtime as possible. Advertisers should be able to query data as soon as possible after the click.
+Idempotent click tracking. We should not count the same click multiple times
+
+
+2. System interface and data flow 
+
+Input 
+Click data 
+Adversier query 
+
+Output
+Redirect for user 
+Analytic for user
+
+Dataflow 
+
+User clicks ad
+User redirected
+CLick is validated (ensuring idempotency)
+Click is logged and aggregated
+Aggregated data is queried
+
+
+3. HLD 
+
+
+Browser --> Click --> Click service --> Ad database (get redirect URL for given AD id )
+            Redirect(302) <---
+
+When click service is called it also needs to log click from user
+
+One simple solution is to store all click info , in a click db , have it connected to some query service which is called by advertiser to query
+Clickdb needs to be write optimised so we can go with Cassandra, however the issue here is we also need efficient range queries clicks in a time range etc 
+which is not possible optimally in most dbs including cassandra
+
+So what we will do is some sort of pre-aggregation we will have a EMR type algo(ex Spark) which will reudce and aggregate cassandra data (in a 1 min granulity) and put in in some read optimised db (OLAP db ex Amazon Redshift), so query service will call that instead of click db
+
+Spark needs some trigger we can use cron scheduler for every say 5 min
+
+With spark we will have 5 min delay still 
+
+A better solution is from click service we should create a stream (Kinesis/Kafka) which is than consumed by some aggregator (Flink/Spark) which stores the 
+data in memory and flushes it every min to OLAP db
+
+for Fault tolerance etc we can shard our kinesis (as well as have multiple shards for hot ones)

@@ -102,3 +102,24 @@ Relational Data Model: SQL databases follow a relational data model, where data 
 Distributed Transactions: SQL databases typically support ACID (Atomicity, Consistency, Isolation, Durability) properties for transactions. Maintaining ACID properties across multiple shards is challenging, as it requires coordinating distributed transactions, which can be slow and prone to failures.
 
 Query Complexity: SQL databases support complex queries involving joins, subqueries, and aggregations. When data is sharded, these queries may need to be executed across multiple shards, which can be inefficient and require complex query routing and result aggregation mechanisms
+
+
+
+**** API Gateway v reverse proxy *****
+
+
+Both serve as an intermediary server that forwards client requests to one or more backend servers and then returns the response to the client. This is a key component in many modern web architectures, often used in conjunction with API gateways and load balancers.
+
+Key Functions of a Reverse Proxy in a Gateway:
+Load Balancing:
+
+A reverse proxy can distribute incoming client requests across multiple backend servers to balance the load, ensuring that no single server is overwhelmed. This improves the performance, reliability, and scalability of the application.
+Security:
+
+Reverse proxies can hide the IP addresses of backend servers from clients, adding an extra layer of security. They can also handle SSL/TLS termination, managing secure connections on behalf of backend servers.
+Caching:
+
+Reverse proxies can cache content from backend servers and serve it directly to clients, reducing the load on backend servers and speeding up response times.
+
+
+Reverse proxy is used in a broader sense (web traffic) and gateway is specifically for apis

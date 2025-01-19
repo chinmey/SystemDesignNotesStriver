@@ -70,3 +70,59 @@ Combining Concurrency and Parallelism: While concurrency and parallelism are rel
 Example: Let's consider a web server that needs to handle multiple client requests simultaneously (concurrency) while also performing computationally intensive tasks like image processing or data analysis (parallelism). The web server can use an event loop or multithreading to handle multiple requests concurrently. When a request requires a computationally intensive task, the server can leverage parallelism by distributing the task across multiple CPU cores or processors. This way, the server can handle multiple requests concurrently while also taking advantage of parallel processing for computationally intensive tasks.
 
 In this example, the web server achieves concurrency by handling multiple requests simultaneously using an event loop or multithreading. At the same time, it leverages parallelism for computationally intensive tasks by distributing them across multiple CPU cores or processors. This combination of concurrency and parallelism allows the server to efficiently handle a high volume of requests while also providing high performance for computationally intensive tasks.
+
+
+
+*** Proxy v reverse proxy ***
+
+Proxy:
+
+Purpose: Acts on behalf of clients.
+
+Position: Sits between clients and the internet.
+
+Client awareness: Clients are typically configured to use the proxy.
+
+Use cases:
+
+Anonymizing client requests
+Caching for improved performance
+Content filtering
+Bypassing geo-restrictions
+IP masking: Hides client IP addresses from servers.
+
+Security: Protects client identity and can filter malicious content.
+
+Load balancing: Not typically used for load balancing.
+
+Example: A corporate proxy server for employee internet access.
+
+Reverse Proxy:
+
+Purpose: Acts on behalf of servers.
+
+Position: Sits between the internet and backend servers.
+
+Client awareness: Clients are unaware; they interact with it as if it's the actual server.
+
+Use cases:
+
+Load balancing
+SSL termination
+Caching for improved performance
+Web acceleration
+Security (protecting backend servers)
+IP masking: Hides server IP addresses from clients.
+
+Security: Protects backend servers from direct exposure to the internet.
+
+Load balancing: Often used to distribute incoming requests across multiple servers.
+
+Example: Nginx or HAProxy in front of web application servers.
+
+Key Differences in System Design:
+
+Direction of traffic:
+
+Proxy: Client → Proxy → Internet
+Reverse Proxy: Internet → Reverse Proxy → Backend Servers

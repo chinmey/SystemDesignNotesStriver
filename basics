@@ -93,7 +93,8 @@ Data is typically denormalized and optimized for specific data models.
 Provides high scalability and performance for large-scale data storage and retrieval.
 Supports eventual consistency rather than strict ACID properties.
 Suitable for handling large volumes of unstructured or semi-structured data.
-Examples: MongoDB (document-oriented), Cassandra (wide-column store), Redis (key-value store), Neo4j (graph database).
+Examples: MongoDB (document-oriented), Cassandra (wide-column store), Redis (key-value store), Neo4j (graph database)., rocksdb, rodb
+Rocksdb is in memory db for faster retrieval etc ,it and cassandra(distributed db) both uses LSM so are write optimised
 
 RDBMS Examples:
 

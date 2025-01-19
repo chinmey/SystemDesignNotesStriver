@@ -75,3 +75,5 @@ In general, for a small application, databases are fine as they bring no additio
 In Rabbit MQ, the MQ pushes the messages to the consumer/consumers.
 In Kafka, the subscribers pulls the records from the topic.
 
+Kafka  --> subscriver pulls
+RabbitMQ --> queue pushes

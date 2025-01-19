@@ -1,0 +1,89 @@
+https://www.hellointerview.com/learn/system-design/problem-breakdowns/ticketmaster --> good website
+
+*** 1. Simple DB-Backed CRUD Service with Caching ***
+
+Client --> Api Gateway --> Load Balancer ---> Service ---> Cache --> Database
+
+Use Case: Most web applications.
+
+Components:
+API Gateway :: Intercepts incoming requests can do auth check/ rate limit/routing etc
+Database: For persistent data storage.
+Cache: To improve performance (e.g., Redis, Memcached).
+Load Balancer: Distributes traffic across multiple service instances.
+
+
+
+*** 2. Async Job Worker Pool ***
+
+system which needs to handle a lot of processing and can tolerate some delay, you might use an async job worker pool. This pattern is common in systems that need to process a lot of data, like a social network that needs to process a lot of images or videos. You'll use a queue to store jobs, and a pool of workers to process them.
+
+A popular option for the queue is SQS, and for the workers, you might use a pool of EC2 instances or Lambda functions. SQS guarantees at least once delivery of messages and the workers will respond back to the queue with heartbeat messages to indicate that they are still processing the job. If the worker fails to respond with a heartbeat, the job will be retried on another host.
+
+Another option is for your queue to be a log of events coming from something like Kafka. Kafka gives you many of the same guarantees as SQS, but since the requests are written to an append-only log, you can replay the log to reprocess events if something goes wrong
+
+
+*** 3. Two-Stage Architecture ***
+
+Use Case: Efficient scaling for algorithms with poor performance on large datasets (e.g., image similarity, recommendation systems, search engines).
+
+Design:
+Stage 1: Fast algorithm for filtering (e.g., inverted indexes).
+Stage 2: Slower, more accurate algorithm for narrowed-down candidates.
+
+Examples:
+Candidate generation in recommendations.
+ETA calculations in route planning.
+
+*** 4. Event-Driven Architecture (EDA) ***
+
+Use Case: Real-time, scalable, loosely coupled systems (e.g., e-commerce, notifications).
+
+Components:
+Event Producers: Generate events.
+Event Routers/Brokers: Dispatch events (e.g., Kafka, EventBridge).
+Event Consumers: Process events (e.g., trigger processes, update DB).
+
+Failure Handling:
+Durable event logs for recovery (e.g., Kafka with retention policies).
+Beware of backlog buildup in case of processing bottlenecks.
+Example: Order placement in e-commerce triggers inventory updates, notifications, etc.
+
+
+*** 5. Proximity-Based Services ***
+
+Use Case: Search entities by location (e.g., Uber, Gopuff).
+
+Components:
+Geospatial Indexes: Efficient location queries (e.g., PostGIS, Redis geospatial types, Elasticsearch with geo-queries).
+Regions: Divide areas into manageable regions to reduce search space.
+
+Best Practices:
+Only use geospatial indexing for large datasets (e.g., >100K items).
+Small datasets (<1K items): Linear scans are more efficient.
+
+a. Dividing the Space
+The geographical area is divided into smaller regions using techniques like:
+Grid-Based Indexing: The area is divided into a fixed grid of cells.
+Quadtrees: A hierarchical data structure that recursively divides a region into four quadrants.
+Geohashing: Encodes geographic coordinates into a string (hash) that represents a hierarchical grid.
+Example: The geohash for a specific latitude and longitude is "u4pruydqqvj", where longer hashes represent finer precision.
+
+
+b. Storing Locations
+Each location is assigned to a region (grid cell, quadtree node, or geohash prefix) based on its coordinates.
+This allows quick filtering by region.
+*** We than can shard/index db based on this id/key ***
+
+
+c. Querying
+For proximity-based queries (e.g., “Find restaurants within 5 km”):
+The query’s central point is used to determine relevant regions.
+The system retrieves data only from these regions and calculates distances for precise filtering.
+
+
+*** Some self examples ***
+
+Spark --> Used as a EMR to reduce large dataset to be used in analytics etc 
+
+Kinesis/ Kafka stream --> Used when we have anytime of continuos operations like counting clicks/likes etc

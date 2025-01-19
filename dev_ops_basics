@@ -20,6 +20,9 @@ dependencies present to run a application. A container is ideal for storing micr
 They are a lightweight and portable virtualization solution that runs on top of an operating system kernel. Unlike virtual machines, which emulate an entire operating system, containers share the host operating system kernel and isolate applications and their dependencies into separate, self-contained units. This isolation is achieved through kernel-level features like cgroups (control groups) and namespaces.
 The move from virtual machines to containers was driven by the need for even better resource utilization, faster startup times, and improved portability. Containers are more lightweight and efficient than virtual machines because they don't require emulating an entire operating system. They also provide a consistent environment for applications to run, making it easier to move applications between different environments (e.g., from development to production).
 
+AWS Lambda is a serverless computing service offered by Amazon Web Services (AWS). It allows you to run your code without provisioning or managing servers,
+these are often event driven like they run on receiving some files/upload to db etc
+
 
 *** How to avoid cascading failures in a distributed system/ Thundering herd problem ***
 

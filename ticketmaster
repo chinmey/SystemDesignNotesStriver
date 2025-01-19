@@ -1,0 +1,95 @@
+*** Ticket Master *** (Hello interview)
+
+
+1.a Functional requirements 
+
+> Users should be able to buy tickets 
+> Users should be able to view events 
+> Users should be able to search for events 
+
+1.b Non-Functional requirements
+
+> Always think from CAP theoram what is needed more 
+C >> A (because we should not have duoble booking)
+
+However often C and A coexits in systems we also want high A for viewing/searching events
+
+> Read >> Writes in our system 
+
+> Patterns is booking is done closer to big events , so scalability should be able to handle those , traffic is not high throughout
+
+
+2. Core Entities (Data Modeling stuff)
+
+- Events 
+- Venue 
+- Ticket
+- Perfomer 
+
+So we will have tables around all of them (what is inside each may/may not be discussed)
+
+3. API
+
+ideally we should make API that satisfy all our Functional requirement and it parameter and return type they should focus on Core Entities 
+
+> View Events  
+
+GET /event/:eventId ---> Events & Venue & Perfomer & Ticket[](to render seat map)
+
+> Search Event 
+
+GET /search?term={term}?location={location}?category={category}.... --> Partial<Event[]> (not full info)
+
+> Booking Ticket
+
+Booking is a two step process first we see map and select a ticket now for some fix time (say 10 min) that seat is reserved for us if we book in that time 
+we get seat else seat becomes available again
+
+POST /booking/reserve
+header : JWT | Session token (Header will store user details never body)
+body 
+{
+    ticketId
+}
+
+POST / PUT : /booking/payment
+header : 
+body 
+{
+ticketId, paymentDetails
+}
+
+
+4. HLD 
+
+if time permits here we can talk about Database basically what table of each core entity would look like
+
+
+Client --> API Gateway ---> Event Crud Service ---> Cache --> Database
+                       ---> Search Endpoint
+                       ---> Reserve/Payment Endpoint
+
+Now for tickets which were reseved and not bought we need to bring them back in available state we can use a cron job for that (however that creates a delta)
+say job runs every 10 time now if someone books ticket at 12.01 even thou it expires at 12.11 it would become avialble only at 12.20 (9 min waste)
+
+A better solution is to have a ticket lock using something like redis and whenver we return ticket map check if ticket is locked and than return same
+immeditaley when time expires this lock is given up 
+
+
+We prefer SQL DB since we need high consistency and we have compelx relationships here also (so we can go into MYSQL or PostgreSQL)
+
+
+5. Deep dive 
+
+Above design works well, now we deep dive on non-functional requirements and ensure they are fulfilled well
+
+
+> Currently our searches and all go thru whole events how to ensure our search etc is faster
+
+We can introduce a search optimised db (Elasticsearch --> this builds inverted index check in online -file it has details)
+Primary db --> Elasticsearch can be measured with CDC
+
+
+> For every popular queries (like Taylor swift concert) we can cache some query in CDN (this is even before API Gateway)
+
+> To scale up for big events :: we can use any of rate limiter technique to make a virtual waiting queue (ex Leaking queue)
