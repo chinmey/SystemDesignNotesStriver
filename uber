@@ -1,0 +1,76 @@
+
+*** Functional requirements ***
+
+> User should be able to input a start location, destination and get estimated fare
+> User should be able to request a ride based on estimate 
+> Drivers should be able to accept/deny request and navigate to pickup/dropoff
+
+Out of scope : ratings/scheduling a ride etc 
+
+*** Non-functional requirements ***
+> Low latency matching (< 1 min or failure)
+> In terms of CAP , we care about consistency of matching (their should be 1-1 on ride and driver), it should be highly available
+outside of this 
+> Handle high theroughput (peak/special event) {100s of thousands of requests in a region}
+
+Out of scope : GDPR/user privacy/ fault tolerance/monitoring/metrics/alerting 
+
+Estimates will do later in HLDs when they directly impact our design
+
+*** Core Entity ***
+
+Ride 
+Driver
+Rider
+Location Entity (has location of all drivers to quickly match them based on proximity)
+
+*** API ***
+
+For the first requiremnet , it looks like a GET but we need to get sensitive info like location etc that if taken as query string makes it messy 
+
+POST /ride/fare-estimate --> Partial<Ride>
+
+{
+    source,destination
+}
+
+And this info will be peristsed in a db etc because this would be used later to request ride potentially. Ex rideId will be needed in next request
+
+PUT /ride/request --> 200 (since this is async) (can be patch also)
+
+{
+    rideId
+}
+
+For actual matching we will need drivers location 
+
+POST /location/update 
+
+{
+    longitude,latitude
+}
+
+Now for drivers to accept or deny 
+
+PATCH /ride/driver/accept
+
+{
+    rideId, true/false
+}
+
+We need one endpoint for navigation
+
+PATCH /ride/driver/update --> lat/long they need to go
+
+{
+    rideId, status : {PICKED_UP, DROPPED_OFF}
+}
+
+We don't put userId in any of the request (example who pickedup ride), these will be put in headers since body is securityRisk
+
+
+*** High level Design ***
+
+see video for this
+
+Quadtree or geohash used to reduce latency for problems like driver near to me etc

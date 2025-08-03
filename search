@@ -1,0 +1,39 @@
+Generally any kind of search problem(ex fb post search) is best solved via elasticsearch db , which uses inverted search (look at chat-gpt example)
+
+Doc 1: The quick brown fox
+Doc 2: The quick dog
+Doc 3: Brown bear
+
+"the"   → [Doc1, Doc2]
+"quick" → [Doc1, Doc2]
+"brown" → [Doc1, Doc3]
+"fox"   → [Doc1]
+"dog"   → [Doc2]
+"bear"  → [Doc3]
+
+
+So ideally the flow looks like this 
+
+[Primary DB] ➡ [Indexing Pipeline/Service] ➡ Transformer ➡ [Elasticsearch]
+
+for indexing pipeline
+
+Change Data Capture (CDC) – stream changes from primary DB
+
+✅ ETL jobs – batch syncs
+
+✅ App logic – write to both DBs during operations
+
+So essentially Elasticsearch will give us ability to give a list of post/content related to each keyword search
+
+Now this solves basic search but most searches need ability to sort either by likes(interaction) or recency etc
+
+So a beginner approach would be once we get list of posts from keyword i go back to my main db lookup creation date from it and sort but obviously this does not scale {ex a keyword which matches 1000s of posts}
+
+In Elasticsearch world these can be stored inside ES only , in seperate columns in a way as metadata of doc 
+
+Or search results should itself be sorted , we can have 2 sets of keys (duplicate), one that stores with likes and other that stores with time, so like_the --> List of docs , time_the --> List of docs both will be sorted
+
+Now the next part is how do we handle throughput on read or search traffic --> Answer here is almost always distributed cache + CDN
+
+To handle throughput on write or post traffic --> we can have CDC write to kafka and our tokensition/transfomer take it from there
