@@ -1,0 +1,30 @@
+https://excalidraw.com/#json=4Qcj3ebhs7MMIhJLSmZuA,aDBDL8maZJvFNX50ddGXUQ --> book my show.
+
+
+Top-K design (example Top-K search/ Top-K video on yt)
+
+
+Event publisher would send input to a kafka stream which is partitioned by videoId.
+
+When we say partitioned by videoId is we will have different partitions for each video and those each would have a consumer for them
+
+for example say we have a 1000 partitions than we would do this.
+
+partition = hash(videoId) % NUM_PARTITIONS
+
+This ensures same videoId always goes to same partition. 
+
+So each partition can calculate its top-k and we can aggregate all to calculate global top-k. {done using heaps}
+
+This aggregation we can use Apache Flink or Apache Spark streaming etc.
+
+We convert this aggregation to parquet files (its a format optimised for analytics has compression/columnor search) and store in S3.
+
+example parquet file (storing things together not rowwise which forces whole read to get to one property,)
+
+Column "videoId": [abc123, def456, ghi789]
+Column "views":   [1500, 3200, 875]
+Column "duration":[120, 95, 60]
+
+
+We can also than put a dump of this in some time series db (Promethus/TimescaleDB) to quickly get results and historical or low severity ones could be found from S3
