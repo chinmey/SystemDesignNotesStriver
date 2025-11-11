@@ -1,0 +1,947 @@
+## Foundational Concepts
+
+### Scaling Systems
+
+- __Vertical Scaling__: Adding more resources to a single machine (RAM, CPU, SSD)
+
+  - Pros: Faster (intra-process calls), consistent (single machine), simpler architecture
+  - Cons: Hardware limitations, single point of failure, expensive
+
+- __Horizontal Scaling__: Adding more machines to distribute load
+
+  - Pros: Theoretically unlimited scaling, better fault tolerance, cost-effective
+  - Cons: More complex architecture, network calls (slower), data consistency challenges
+
+- Real-world systems typically use a combination of both approaches
+
+### CAP Theorem
+
+- In a distributed system, you can have only 2 out of 3:
+
+  - __Consistency__: All nodes see the same data at the same time
+  - __Availability__: Every request gets a response (success or failure)
+  - __Partition Tolerance__: System continues working despite network failures
+
+- Example trade-offs:
+
+  - Banking systems prioritize consistency over availability
+  - Social media platforms often prioritize availability over consistency
+
+### Capacity Estimation
+
+- Crucial for system design planning
+- Involves calculating storage, memory, and processing needs
+- Example: YouTube daily storage = Users × Upload Rate × Average Size × Redundancy Factor
+
+## Network & Data Transfer
+
+### Network Protocols
+
+- __IP Protocol__: Basic addressing and routing of packets
+- __TCP__: Connection-oriented protocol ensuring reliable delivery
+- __UDP__: Connectionless protocol favoring speed over reliability (used in streaming)
+- __HTTP/HTTPS__: Application layer protocol for web communication
+- __DNS Resolution Process__: How domain names are converted to IP addresses
+
+### Process vs Thread
+
+- __Process__: Independent program execution with its own memory space
+
+- __Thread__: Smallest unit of CPU execution within a process, shares memory
+
+- __Key Differences__:
+
+  - Creating processes is more resource-intensive than threads
+  - Threads share memory space, processes don't
+  - Context switching between threads is faster
+  - Inter-thread communication is more efficient than inter-process
+
+## Data Storage
+
+### Databases
+
+- __Relational Databases (RDBMS)__:
+
+  - Structured data in tables with relationships
+  - ACID compliance (Atomicity, Consistency, Isolation, Durability)
+  - Examples: MySQL, PostgreSQL, Oracle
+  - Use cases: Banking systems, e-commerce platforms
+
+- __NoSQL Databases__:
+
+  - Schema-less data models
+  - Types: Key-value, document, columnar, graph
+  - Prioritize scalability and performance over strict consistency
+  - Examples: MongoDB, Cassandra, Redis, Neo4j
+  - Use cases: Social media, content delivery, real-time analytics
+
+### Database Optimization Techniques
+
+#### Indexing
+
+- __B-tree Indexes__: Most common, balances search/insert/delete operations
+- __Geospatial Indexes__: For location-based queries
+- __Inverted Indexes__: For text search and pattern matching
+
+#### Sharding
+
+- Horizontally partitioning data across multiple database instances
+
+- Strategies:
+
+  - Range-based: Data divided by value ranges
+  - Hash-based: Using hash function to distribute evenly
+  - Directory-based: Using lookup service to locate data
+
+#### Bloom Filters
+
+- Probabilistic data structure to test if element is in a set
+- Used to prevent "one-hit wonders" from being stored in cache
+- Can give false positives but never false negatives
+
+## Caching
+
+### Caching Strategies
+
+- __Write-through__: Update both cache and main memory simultaneously
+
+  - Pros: Data consistency, simple implementation
+  - Cons: Higher latency for writes, increased memory traffic
+
+- __Write-back__: Update cache first, write to memory later when needed
+
+  - Pros: Lower write latency, reduced memory traffic
+  - Cons: Risk of data loss, more complex implementation
+
+### Cache Eviction Policies
+
+- __LRU (Least Recently Used)__: Discards least recently accessed items first
+- __LFU (Least Frequently Used)__: Discards least frequently accessed items
+- __FIFO (First In, First Out)__: Discards oldest items first
+- __Sliding Window__: Considers both recency and frequency
+
+### Content Delivery Networks (CDNs)
+
+- Distributed network of servers to deliver content closer to users
+- Improves load times by reducing distance between user and content
+- Reduces load on origin servers
+
+## System Architecture
+
+### Load Balancing
+
+- Distributes incoming network traffic across multiple servers
+
+- Algorithms:
+
+  - Round Robin: Sequential distribution
+  - Least Connections: Sends to server with fewest active connections
+  - IP Hash: Uses client IP to determine server (session persistence)
+
+- __Consistent Hashing__: Minimizes remapping when servers are added/removed
+
+  - Maps servers and requests to points on a hash ring
+  - When a server is added/removed, only a fraction of keys need remapping
+  - Uses multiple virtual nodes per server for better distribution
+
+### Microservices vs Monoliths
+
+- __Monolithic Architecture__:
+
+  - Single, self-contained application
+  - Pros: Simpler development, testing, deployment; efficient communication
+  - Cons: Scaling challenges, technology lock-in, longer deployment cycles
+
+- __Microservices Architecture__:
+
+  - Collection of small, independent services
+  - Pros: Independent scaling, fault isolation, technology flexibility
+  - Cons: Increased complexity, network overhead, distributed data management
+
+### API Design Principles
+
+- Clear naming conventions
+- Appropriate parameter definitions
+- Consistent response formats
+- Proper error handling
+- Logical routing
+- Avoiding side-effects
+
+## Advanced Concepts
+
+### Distributed Concurrency
+
+- __Database Locking__: Prevents multiple transactions from modifying same data
+
+  - Pessimistic: Locks data before access
+  - Optimistic: Checks for conflicts at commit time
+
+- __Two-Phase Locking (2PL)__:
+
+  - Growing phase: Acquire all needed locks
+  - Shrinking phase: Release locks, no new acquisitions
+
+- __Leaky Bucket Model (Queue-based Serialization)__:
+
+  - Places requests in a queue for sequential processing
+  - Guarantees order and atomicity
+  - Trade-off: Higher latency
+
+### Data Consistency Models
+
+- __Linearizable/Serializable__:
+
+  - Strongest consistency model
+  - All operations appear to execute atomically in some sequential order
+  - High consistency, but lower performance
+
+- __Eventual Consistency__:
+
+  - System may return stale data temporarily
+  - All replicas eventually converge to the same state
+  - Higher performance, but temporary inconsistencies
+
+- __Causal Consistency__:
+
+  - If operation A causally affects B, all nodes see A before B
+  - Stronger than eventual, weaker than linearizable
+  - Good balance of performance and consistency
+
+- __Quorum-based Consistency__:
+
+  - Uses majority voting to ensure consistency
+  - Write quorum (W) + Read quorum (R) > Total replicas (N)
+  - Tunable consistency level based on application needs
+
+### Transaction Isolation Levels
+
+- __Read Uncommitted__: Lowest isolation, allows dirty reads
+- __Read Committed__: Prevents dirty reads, allows non-repeatable reads
+- __Repeatable Reads__: Prevents non-repeatable reads, allows phantom reads
+- __Serializable__: Highest isolation, prevents all concurrency anomalies
+
+## Communication Patterns
+
+### Message Queues
+
+- Asynchronous communication between components or services
+
+- Benefits:
+
+  - Decoupling sender from receiver
+  - Reliability and fault tolerance
+  - Load balancing and scalability
+  - Buffering during traffic spikes
+
+- __Models__:
+
+  - Producer-Consumer: Basic message passing
+  - Publish-Subscribe: Multiple consumers receive each message
+  - Request-Reply: Bidirectional communication
+
+- __Implementations__:
+
+  - Kafka: Pull-based, high throughput, topic partitioning
+  - RabbitMQ: Push-based, flexible routing
+
+### Event-Driven Architecture
+
+- Components communicate through events rather than direct calls
+- More loosely coupled than request-response model
+- Better suited for complex, distributed systems
+- Excellent for real-time processing and reactive systems
+
+## Security
+
+### Authentication vs Authorization
+
+- __Authentication__: Verifies who you are (identity)
+  - Methods: Passwords, MFA, biometrics, certificates
+- __Authorization__: Determines what you can do (permissions)
+  - Methods: Role-based (RBAC), Attribute-based (ABAC), ACLs
+
+### OAuth and Token-based Authentication
+
+- __OAuth__: Delegates authentication to trusted third parties
+
+  - Flow: Request → Grant → Token → Access
+  - Benefits: No credential sharing, granular permissions, standardization
+
+- __Token-based Authentication__:
+
+  - JWT (JSON Web Token): Self-contained, stateless
+  - Session tokens: Server-side, stateful
+  - Trade-offs: Scalability vs revocation ease
+
+## Practical System Design Examples
+
+### File Storage System (Dropbox)
+
+- __Key components__:
+
+  - Metadata service: Stores file metadata in database
+  - Storage service: Manages actual file content (often blob storage)
+  - Synchronization service: Keeps files consistent across devices
+
+- __Handling large files__:
+
+  - Break into chunks (5-10MB)
+  - Calculate fingerprints for each chunk and whole file
+  - Use presigned URLs for direct-to-storage upload
+  - Track upload status per chunk
+  - Resume uploads from last successful chunk
+
+### Content Streaming Platform (YouTube)
+
+- __Video upload flow__:
+
+  - Split videos into small segments
+  - Transcode into multiple formats/resolutions
+  - Create manifest file for adaptive streaming
+
+- __Video streaming flow__:
+
+  - Client fetches manifest file
+  - Chooses format based on network conditions
+  - Downloads segments sequentially
+  - Adapts quality as network conditions change
+
+- __Analytics system (Top-k videos)__:
+
+  - Kafka/event streaming for view events
+  - Sharded counting services by region
+  - Aggregation service to combine regional data
+  - Support for time-windowed queries
+
+In real-world system design, these concepts are combined to create robust, scalable, and efficient systems that can handle millions or billions of users while maintaining performance and reliability. The art of system design is knowing which trade-offs to make based on your specific requirements and constraints.
+
+
+## Advanced Data Structures and Algorithms
+
+### HyperLogLog
+
+- __Purpose__: Probabilistic data structure for approximating the number of unique elements (cardinality)
+
+- __Advantage__: Requires significantly less memory than exact counting methods
+
+- __How It Works__:
+
+  - Uses hash functions to map elements to bit patterns
+  - Counts the maximum number of consecutive trailing zeros in the binary representation
+  - Intuitively, the probability of observing a pattern with k trailing zeros is 2^(-k)
+  - Divides elements into buckets and averages observations for better accuracy
+  - Gives approximation with typical error rate ~2%
+
+- __Applications__:
+
+  - Counting unique visitors to a website
+  - Estimating unique search queries
+  - Analyzing unique elements in large datasets without storing them
+
+### Bloom Filters
+
+- __Purpose__: Space-efficient probabilistic data structure for set membership testing
+
+- __Properties__:
+
+  - Can tell if an element is definitely not in a set
+  - May give false positives (incorrectly say element is in set)
+  - Never gives false negatives
+
+- __How It Works__:
+
+  - Uses multiple hash functions to set bits in a bit array
+  - To check if element exists, checks if all corresponding bits are set
+
+- __Applications__:
+
+  - Preventing "one-hit wonders" in caches
+  - Quickly filtering non-existent data before expensive lookups
+  - Spell checkers and web crawlers
+
+### Inverted Index
+
+- __Purpose__: Data structure for full-text search
+
+- __How It Works__:
+
+  - Maps content (words) to their locations
+  - Instead of searching documents for words, search words for documents
+
+- __Example__:
+
+  ```javascript
+  Word      → Documents
+  -----------------------
+  "The"     → [1, 2, 3]
+  "quick"   → [1]
+  "brown"   → [1]
+  "fox"     → [1, 3]
+  ```
+
+- __Applications__:
+
+  - Search engines
+  - Full-text search in databases
+  - Content indexing systems
+
+## AI/ML System Design
+
+### ChatGPT Architecture
+
+- __Data Collection and Processing__:
+
+  - Web crawlers gather text from internet
+  - BFS approach to follow hyperlinks up to specified depth
+  - Text is cleaned, normalized, and tokenized
+
+- __Embedding Generation__:
+
+  - Text converted to vector embeddings
+  - Similar concepts mapped to nearby points in high-dimensional space
+  - Example: "cat" and "feline" have similar embeddings
+
+- __Query Processing__:
+
+  1. Input tokenization: "Tell me about cats" → ["Tell", "me", "about", "cats"]
+  2. Token-to-embedding conversion
+  3. Contextual understanding via transformers
+  4. Finding related content using vector similarity
+  5. Response generation based on relevant content
+
+- __Vector Database__:
+
+  - Stores embeddings efficiently
+  - Enables fast similarity search
+  - Returns nearest neighbors for input query vectors
+
+## File Handling Systems
+
+### Online File Converter
+
+- __Architecture__:
+
+  ```javascript
+  Client → Load Balancer → Security Checker → Message Queue → Converters → Storage
+  ```
+
+- __Components__:
+
+  - Security checker/rate limiter ensures safe files
+  - Message queue manages conversion tasks
+  - Multiple specialized converters work in parallel
+  - Storage system keeps converted files (longer retention for paid users)
+
+- __Workflow__:
+
+  1. Client uploads file through load balancer
+  2. Security checks performed
+  3. Conversion job added to queue
+  4. Available converters process jobs
+  5. Results stored and provided to client
+
+### Dropbox/File Storage System
+
+- __Key features__: Upload, download, sync across devices
+
+- __Large File Handling__:
+
+  - Files chunked into smaller pieces (5-10MB)
+  - Each chunk gets unique fingerprint via hashing
+  - Chunks uploaded independently
+  - Resumable uploads by tracking chunk status
+  - Only missing chunks transferred when restarting
+
+- __Sync Mechanism__:
+
+  - Local client tracks file changes using OS APIs
+
+  - Metadata database at client and server level
+
+  - Two-way sync:
+
+    - Remote→Local: Push notifications or polling
+    - Local→Remote: OS file change events trigger uploads
+
+## Short URL Service (TinyURL)
+
+- __URL Shortening Strategies__:
+
+  1. __Base62 Encoding__: Convert incremental IDs to base62 (a-z, A-Z, 0-9)
+  2. __Hash and Truncate__: Generate cryptographic hash of URL and take first N characters
+  3. __Random Generation__: Generate random string and check for collisions
+
+- __Key Statistics__:
+
+  - 7-character URL using 62 characters = 62^7 = 3.5 trillion possibilities
+  - More than enough for most services
+
+- __Architecture Components__:
+
+  - URL storage database
+  - Hash generation service
+  - Redirect service
+  - Analytics (optional)
+
+## Social Media and Messaging Systems
+
+### Instagram-like Platform
+
+- __Core Features__:
+
+  1. Posting content
+  2. Likes and comments
+  3. Following system
+  4. Feed generation
+
+- __Feed Generation Approaches__:
+
+  - __Pull Model__: Generate feed on-demand from following list
+  - __Push Model__: Pre-compute feeds and update when following posts
+  - __Hybrid Model__: Push for regular users, pull for celebrities
+
+- __Notification System__:
+
+  - Push notifications for normal users
+  - Pull or batched push for high-profile accounts
+
+### Messaging Systems (WhatsApp)
+
+- __Features__:
+
+  1. Direct messaging
+  2. Group messaging
+  3. Read receipts
+  4. Media sharing
+  5. Temporary/permanent chats
+
+- __Architecture__:
+
+  - Gateway servers handling user connections
+  - Session service tracking which user connected to which gateway
+  - WebSockets or XMPP for real-time communication
+  - Read receipts via acknowledgment system
+  - Storage strategy for messages (temporary vs permanent)
+
+### Tinder-like Dating App
+
+- __Core Features__:
+
+  1. Profile creation with preferences
+  2. Location-based matching
+  3. Swipe mechanism
+  4. Match notifications
+
+- __Location Handling__:
+
+  - Geospatial indexes for efficient proximity queries
+  - Sharding database by location
+  - QuadTree data structure for spatial indexing
+
+- __Matching Algorithm__:
+
+  - Filter by preferences (age, interests)
+  - Filter by distance (using geospatial queries)
+  - Track user decisions (swipes)
+  - Notify on mutual positive swipes
+
+### Video Streaming Platforms
+
+- __Live Streaming Architecture__:
+
+  ```javascript
+  Video → TCP(RTMP) → Transformation → Message Queue → Subscribers → Distribution
+  ```
+
+- __Transformation Process__:
+
+  - High-quality input converted to multiple resolutions/bitrates
+  - Batch jobs process video segments
+  - Results published to distribution queue
+  - CDN delivers to end users
+
+- __Adaptive Streaming__:
+
+  - Manifest file contains metadata about available formats
+  - Client selects quality based on network conditions
+  - Dynamic switching between quality levels during playback
+
+## Counting and Payment Systems
+
+### Top-K Most Viewed Videos
+
+- __Requirements__: Track most viewed videos over different time windows
+
+- __Solution__:
+
+  - Event stream processing (Kafka/SQS)
+  - View Manager service counts views
+  - Heap data structure maintains top-K rankings
+  - Sharding by region for scalability
+  - Aggregator component combines regional data
+
+### UPI Payment System
+
+- __Architecture__:
+
+  ```javascript
+  Sender → Sender's Bank → NPCI → Receiver's Bank → Receiver
+  ```
+
+- __Key Components__:
+
+  - UPI ID mapping to bank accounts (managed by NPCI)
+  - Authentication via PIN/biometrics
+  - Bank-level caching for frequent transactions
+  - NPCI as central routing authority
+
+### Splitwise Simplify Feature
+
+- __Algorithm__:
+
+  1. Parse all transactions into (payer, payee, amount)
+  2. Calculate net balances for each person
+  3. Use priority queues for users with positive and negative balances
+  4. Match highest debtor with highest creditor
+  5. Settle smaller amount and update balances
+  6. Repeat until all balances are zero
+
+## Replication & Consensus
+
+### Replication Models
+
+#### Leader-Follower Replication
+
+- __How it Works__:
+
+  - One node (leader/primary) handles all writes
+  - Other nodes (followers/replicas) receive copies of the data
+  - Reads can be handled by any node
+
+- __Advantages__:
+
+  - Simple to implement and understand
+  - Strong consistency guarantees possible
+  - No conflict resolution needed
+
+- __Disadvantages__:
+
+  - Leader is a single point of failure
+  - Write throughput limited by single leader
+
+- __Examples__: MySQL replication, PostgreSQL streaming replication
+
+#### Multi-Leader Replication
+
+- __How it Works__:
+
+  - Multiple nodes can accept writes
+  - Each leader replicates changes to all other leaders
+  - Conflicts must be detected and resolved
+
+- __Advantages__:
+
+  - Higher write availability and throughput
+  - Works across multiple data centers
+  - Resilience to leader failures
+
+- __Disadvantages__:
+
+  - Complex conflict resolution required
+  - Consistency guarantees are weaker
+  - More complex implementation
+
+- __Examples__: Multi-datacenter databases, collaborative editing applications
+
+#### Leaderless Replication
+
+- __How it Works__:
+
+  - All nodes are equal; any can accept reads and writes
+  - Uses quorum-based approach for operations
+  - Read/write quorums ensure consistency
+
+- __Advantages__:
+
+  - No single point of failure
+  - High availability for writes
+  - Scales horizontally
+
+- __Disadvantages__:
+
+  - Complex conflict resolution
+  - Read/write operations may need to contact multiple nodes
+  - Eventual consistency model
+
+- __Examples__: Amazon Dynamo, Apache Cassandra
+
+### Consensus Protocols
+
+#### Paxos
+
+- __Purpose__: Achieve consensus in a distributed system with unreliable nodes
+
+- __Key Concepts__:
+
+  - Proposers, acceptors, and learners as roles
+  - Two-phase commit with prepare and accept phases
+  - Majority voting to ensure consistency
+
+- __Applications__:
+
+  - Google's Chubby lock service
+  - Microsoft's Cosmos DB
+  - Foundation for many distributed systems
+
+#### Raft
+
+- __Purpose__: More understandable alternative to Paxos with same fault-tolerance properties
+
+- __Key Concepts__:
+
+  - Leader election with randomized timeouts
+  - Log replication from leader to followers
+  - Safety guaranteed through majority consensus
+
+- __Phases__:
+
+  - Leader Election: Select a single leader
+  - Log Replication: Leader manages consistent log across nodes
+  - Safety: Ensures log consistency through constraints
+
+- __Applications__:
+
+  - etcd (used by Kubernetes)
+  - HashiCorp Consul
+  - Many modern distributed systems
+
+### Data Partitioning & Replication Trade-offs
+
+| Technique | Primary Benefit | Use Cases | Challenges | |-----------|----------------|-----------|------------| | Sharding | Scalability (horizontal) | High-write throughput, large datasets | Complex queries, joins, transactions | | Replication | Availability, fault tolerance | Read-heavy workloads, global access | Data consistency, replication lag | | Both Combined | Global scale systems | Social networks, e-commerce, content delivery | Complex architecture, operational overhead |
+
+- __Sharding + Leader-Follower__: Good for systems requiring strong consistency within shards
+- __Sharding + Multi-Leader__: Good for multi-datacenter deployments with local write optimization
+- __Sharding + Leaderless__: Good for systems prioritizing availability and partition tolerance over consistency
+
+## Distributed Job Scheduling & Coordination
+
+### Task Queue Systems
+
+- __Purpose__: Manage asynchronous execution of jobs/tasks
+
+- __Components__:
+
+  - Producer: Creates tasks and adds them to queue
+  - Queue: Stores tasks until they can be processed
+  - Consumer/Worker: Processes tasks from queue
+
+- __Examples__:
+
+  - Celery (Python)
+  - Sidekiq (Ruby)
+  - Bull (Node.js)
+  - Amazon SQS + Lambda
+
+### Distributed Cron Systems
+
+- __Purpose__: Schedule periodic jobs across distributed systems
+
+- __Challenges__:
+
+  - Time synchronization across nodes
+  - Job deduplication (ensure job runs only once)
+  - Failure handling and retries
+  - Monitoring and alerting
+
+- __Solutions__:
+
+  - Centralized scheduler with distributed execution
+  - Consensus-based scheduling with leader election
+  - Database-backed job scheduling with locking
+
+- __Examples__:
+
+  - Apache Airflow
+  - Quartz Scheduler
+  - Kubernetes CronJobs
+
+### Distributed Locks
+
+- __Purpose__: Coordinate access to shared resources in distributed systems
+
+- __Implementations__:
+
+  - __Redis-based__: Simple, lightweight, but potential split-brain issues
+  - __ZooKeeper__: Robust, consensus-based locks with ephemeral znodes
+  - __etcd/Consul__: Modern alternatives with consensus algorithms
+
+- __Patterns__:
+
+  - Lock with timeout/expiry to prevent deadlocks
+  - Fencing tokens to prevent split-brain problems
+  - Lease mechanisms for efficient resource allocation
+
+### Real-world Examples
+
+#### Uber's Trip Assignment System
+
+- __Architecture__:
+
+  - Geospatially sharded dispatch system
+  - Redis-based distributed locking for driver assignment
+  - Event-driven architecture with Apache Kafka
+  - Real-time optimization algorithm for matching
+
+- __Key Features__:
+
+  - Prevents multiple assignments of the same driver
+  - Handles driver/rider location updates in real-time
+  - Balances supply/demand through dynamic pricing
+  - Fault tolerance with leader election and redundancy
+
+#### Large-scale Cron Job Management
+
+- __Approach__:
+
+  - Metadata stored in distributed database (job definitions, schedules)
+  - Leader election to determine scheduling coordinator
+  - Distributed worker pools for job execution
+  - Checkpointing and idempotent job design
+
+- __Implementations__:
+
+  - LinkedIn's Azkaban
+  - Spotify's Luigi
+  - Airbnb's Airflow deployment
+  - Netflix's distributed scheduler
+
+#### Distributed E-commerce Order Processing
+
+- __Workflow__:
+
+  1. Order placement triggers event to queue
+  2. Inventory service acquires distributed lock on items
+  3. Payment processing service executes transaction
+  4. Fulfillment service processes successful orders
+  5. Each step coordinated through distributed queues and locks
+
+- __Benefits__:
+
+  - Horizontal scaling of each component
+  - Resilience to component failures
+  - Consistent processing with transactional guarantees
+
+## System Design Tradeoffs
+
+### Push vs Pull Architecture
+
+- __Push Architecture__:
+
+  - Data producer initiates transfer
+  - Examples: Pub/Sub, WebSockets, push notifications
+  - Pros: Real-time updates, reduced latency, efficient for frequent updates
+  - Cons: Potential overwhelming of clients, more complex error handling
+
+- __Pull Architecture__:
+
+  - Data consumer requests data
+  - Examples: REST APIs, polling, database queries
+  - Pros: Client controls timing, simpler implementation, better for infrequent updates
+  - Cons: Latency, wasted requests if no updates, server load from polling
+
+### Throughput vs Latency
+
+- __Throughput Optimization__:
+
+  - Focus on processing more requests per unit time
+  - Techniques: Batching, parallelization, efficient resource use
+  - Applications: Data processing pipelines, batch processing systems
+
+- __Latency Optimization__:
+
+  - Focus on minimizing time to complete individual requests
+  - Techniques: Caching, edge computing, optimized algorithms
+  - Applications: Real-time systems, interactive user interfaces, gaming
+
+### SQL vs NoSQL Databases
+
+- __SQL Advantages__:
+
+  - Structured data with schema
+  - Strong consistency and ACID transactions
+  - Complex query support
+  - Mature ecosystem and tools
+
+- __NoSQL Advantages__:
+
+  - Schema flexibility
+  - Horizontal scalability
+  - Specialized for specific data models
+  - Better performance for certain access patterns
+
+- __Sharding Challenges in SQL__:
+
+  - Relational data model complicates sharding
+  - Distributed transactions difficult to maintain
+  - Complex queries across shards
+  - Join operations across shards
+
+### API Gateway vs Reverse Proxy
+
+- __Common Functions__:
+
+  - Request forwarding
+  - Load balancing
+  - SSL termination
+
+- __API Gateway Specializations__:
+
+  - API-specific features
+  - Authentication/authorization
+  - Rate limiting
+  - Request/response transformation
+  - Analytics and monitoring
+
+- __Reverse Proxy Specializations__:
+
+  - General web traffic handling
+  - Caching
+  - Compression
+  - Security features
+
+## Advanced Techniques for System Reliability
+
+### Rate Limiting
+
+- __Algorithms__:
+
+  - __Token Bucket__: Tokens replenish at fixed rate, requests consume tokens
+  - __Leaky Bucket__: Constant outflow rate with maximum capacity
+  - __Fixed Window__: Count requests in fixed time intervals
+  - __Sliding Window__: Tracks requests with timestamps within moving window
+
+### Idempotent API Design
+
+- __Strategies__:
+
+  - Client-generated IDs to detect duplicates
+  - Conditional POST operations
+  - Idempotency keys in requests
+  - Server-side transaction logs
+
+### High Availability Design
+
+- __Key Principles__:
+
+  - Eliminate single points of failure
+  - Implement redundancy
+  - Ensure fault isolation
+  - Enable fast recovery
+  - Design for scalability
+
+- __Geographic Distribution__:
+
+  - Multiple regions/availability zones
+  - Global load balancing
+  - Data replication strategies
+  - Disaster recovery planning
