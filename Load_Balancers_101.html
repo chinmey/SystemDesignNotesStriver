@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Load Balancers 101 — APX-IN</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1f2937;
+    --border: #30363d;
+    --accent: #58a6ff;
+    --accent2: #3fb950;
+    --accent3: #f78166;
+    --accent4: #d2a8ff;
+    --accent5: #ffa657;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --warn: #f0883e;
+    --danger: #f85149;
+  }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  .deck { position: relative; width: 100%; height: 100vh; }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    padding: 48px 64px;
+    background: var(--bg);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  .slide.active { display: flex; opacity: 1; }
+
+  .slide-num {
+    position: absolute;
+    bottom: 24px;
+    right: 32px;
+    font-size: 12px;
+    color: var(--muted);
+    font-family: monospace;
+  }
+
+  #progress {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: var(--accent);
+    transition: width 0.3s ease;
+    z-index: 100;
+  }
+
+  h1 { font-size: 52px; font-weight: 700; line-height: 1.1; }
+  h2 { font-size: 32px; font-weight: 600; color: var(--accent); margin-bottom: 32px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+  h3 { font-size: 18px; font-weight: 600; }
+  p, li { font-size: 15px; line-height: 1.6; color: var(--text); }
+  .muted { color: var(--muted); }
+
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: monospace;
+    letter-spacing: 0.5px;
+  }
+  .tag-blue { background: rgba(88,166,255,0.15); color: var(--accent); border: 1px solid rgba(88,166,255,0.3); }
+  .tag-green { background: rgba(63,185,80,0.15); color: var(--accent2); border: 1px solid rgba(63,185,80,0.3); }
+  .tag-red { background: rgba(248,81,73,0.15); color: var(--danger); border: 1px solid rgba(248,81,73,0.3); }
+  .tag-orange { background: rgba(255,166,87,0.15); color: var(--accent5); border: 1px solid rgba(255,166,87,0.3); }
+  .tag-purple { background: rgba(210,168,255,0.15); color: var(--accent4); border: 1px solid rgba(210,168,255,0.3); }
+
+  .row { display: flex; gap: 24px; flex: 1; }
+  .col { display: flex; flex-direction: column; flex: 1; gap: 16px; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+  }
+  .card-warn {
+    background: rgba(240,136,62,0.08);
+    border: 1px solid rgba(240,136,62,0.35);
+    border-radius: 12px;
+    padding: 20px 24px;
+  }
+  .card-danger {
+    background: rgba(248,81,73,0.08);
+    border: 1px solid rgba(248,81,73,0.35);
+    border-radius: 12px;
+    padding: 20px 24px;
+  }
+  .card-green {
+    background: rgba(63,185,80,0.08);
+    border: 1px solid rgba(63,185,80,0.35);
+    border-radius: 12px;
+    padding: 20px 24px;
+  }
+  .card-blue {
+    background: rgba(88,166,255,0.08);
+    border: 1px solid rgba(88,166,255,0.35);
+    border-radius: 12px;
+    padding: 20px 24px;
+  }
+
+  .flow-node {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 18px;
+    text-align: center;
+    min-width: 110px;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .flow-node.blue { border-color: var(--accent); background: rgba(88,166,255,0.1); }
+  .flow-node.green { border-color: var(--accent2); background: rgba(63,185,80,0.1); }
+  .flow-node.orange { border-color: var(--warn); background: rgba(240,136,62,0.1); }
+  .flow-node.purple { border-color: var(--accent4); background: rgba(210,168,255,0.1); }
+  .flow-arrow { color: var(--muted); font-size: 18px; padding: 0 6px; flex-shrink: 0; }
+  .flow-label { font-size: 10px; color: var(--muted); margin-top: 4px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { background: var(--surface2); padding: 10px 14px; text-align: left; font-weight: 600; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface); }
+
+  .vdivider { width: 1px; background: var(--border); margin: 0 8px; flex-shrink: 0; }
+
+  code { font-family: 'SF Mono','Consolas',monospace; background: var(--surface2); padding: 2px 6px; border-radius: 4px; font-size: 13px; color: var(--accent4); }
+  .clickable-node { cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; }
+  .clickable-node:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(88,166,255,0.2); }
+
+  .formula { font-family: monospace; font-size: 18px; text-align: center; padding: 16px 24px; background: var(--surface2); border-radius: 8px; border: 1px solid var(--border); color: var(--accent); }
+
+  .big-icon { font-size: 32px; margin-bottom: 8px; }
+
+  ul.clean { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  ul.clean li::before { content: "→"; color: var(--accent); margin-right: 8px; font-weight: 600; }
+  ul.clean li.warn::before { content: "⚠"; color: var(--warn); }
+  ul.clean li.ok::before { content: "✓"; color: var(--accent2); }
+  ul.clean li.bad::before { content: "✗"; color: var(--danger); }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; flex: 1; }
+
+  .gotcha { border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+  .gotcha-icon { font-size: 28px; }
+  .gotcha-title { font-size: 15px; font-weight: 700; }
+  .gotcha-body { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+  .stat { font-size: 36px; font-weight: 700; color: var(--accent); }
+  .stat-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+  #nav-hint { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); font-size: 11px; color: var(--muted); opacity: 0.6; pointer-events: none; }
+
+  .az-box { border: 1px dashed var(--border); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+  .az-label { font-size: 11px; color: var(--muted); font-weight: 600; margin-bottom: 4px; }
+  .host-box { background: var(--surface2); border-radius: 6px; padding: 6px 10px; font-size: 12px; text-align: center; border: 1px solid var(--border); }
+  .host-box.healthy { border-color: rgba(63,185,80,0.5); color: var(--accent2); }
+  .host-box.unhealthy { border-color: rgba(248,81,73,0.5); color: var(--danger); text-decoration: line-through; opacity: 0.6; }
+
+  .title-accent { width: 60px; height: 4px; background: linear-gradient(90deg, var(--accent), var(--accent4)); border-radius: 2px; margin: 20px 0; }
+
+  #slide-1 { justify-content: center; }
+</style>
+</head>
+<body>
+
+<div id="progress"></div>
+<div id="nav-hint">← → to navigate &nbsp;·&nbsp; Space to advance &nbsp;·&nbsp; Click left/right half</div>
+
+<div class="deck">
+
+<!-- ══════════════════════════════════════ -->
+<!-- SLIDE 1: TITLE                         -->
+<!-- ══════════════════════════════════════ -->
+<div class="slide active" id="slide-1">
+  <div style="max-width: 700px;">
+    <div style="display:flex; gap:10px; margin-bottom: 24px;">
+      <span class="tag tag-blue">APX-IN</span>
+      <span class="tag tag-green">101</span>
+    </div>
+    <h1>Load Balancers</h1>
+    <h1 style="color: var(--accent);">From VIPs to Gotchas</h1>
+    <div class="title-accent"></div>
+    <p style="font-size: 18px; color: var(--muted);">An inside look at how traffic actually reaches us —<br>and what surprises teams when it doesn't.</p>
+    <div style="margin-top: 40px; display: flex; gap: 20px; align-items: center;">
+      <div>
+        <p style="font-weight:600; font-size: 16px;">Chinmey</p>
+        <p class="muted" style="font-size: 13px;">In-PAYX · Payments Portal</p>
+      </div>
+    </div>
+  </div>
+  <div class="slide-num">1 / 8</div>
+</div>
+
+<!-- ══════════════════════════════════════ -->
+<!-- SLIDE 2: WHAT IS A LB                 -->
+<!-- ══════════════════════════════════════ -->
+<div class="slide" id="slide-2">
+  <h2>What is a Load Balancer?</h2>
+  <div class="row" style="align-items: flex-start; gap: 40px;">
+
+    <div class="col" style="flex: 1.4;">
+      <div class="card" style="padding: 28px; flex: 1;">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 12px;">
+          <div class="flow-node blue" style="min-width: 140px;">
+            🌐 Client
+            <div class="flow-label">User / Browser</div>
+          </div>
+          <div style="color: var(--muted); font-size: 13px;">TCP + TLS (~50ms)</div>
+          <div class="flow-node orange" style="min-width: 200px; padding: 16px;">
+            ⚖️ Load Balancer
+            <div class="flow-label">VIP endpoint · Tardigrade ALB</div>
+          </div>
+          <div style="display:flex; gap: 4px; color: var(--muted); align-items:center;">
+            <div style="width: 80px; height: 1px; background: var(--border);"></div>
+            <span style="font-size: 13px; padding: 0 8px; color: var(--muted);">routes to</span>
+            <div style="width: 80px; height: 1px; background: var(--border);"></div>
+          </div>
+          <div style="display: flex; gap: 16px;">
+            <div class="host-box healthy" style="padding: 12px 16px;">
+              🖥 Host 1<br><span style="font-size:10px; color: var(--accent2);">✓ Healthy</span>
+            </div>
+            <div class="host-box healthy" style="padding: 12px 16px;">
+              🖥 Host 2<br><span style="font-size:10px; color: var(--accent2);">✓ Healthy</span>
+            </div>
+            <div class="host-box unhealthy" style="padding: 12px 16px;">
+              🖥 Host 3<br><span style="font-size:10px;">✗ Unhealthy</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col" style="flex: 1; justify-content: center; gap: 20px;">
+      <div class="card">
+        <div class="big-icon">📈</div>
+        <h3>Elastic Scale</h3>
+        <p style="color: var(--muted); font-size: 13px; margin-top: 6px;">Distribute traffic across hosts. Add/remove capacity without downtime.</p>
+      </div>
+      <div class="card">
+        <div class="big-icon">🛡</div>
+        <h3>Health Awareness</h3>
+        <p style="color: var(--muted); font-size: 13px; margin-top: 6px;">Continuously probes hosts. Stops routing to unhealthy ones automatically.</p>
+      </div>
+      <div class="card">
+        <div class="big-icon">🔒</div>
+        <h3>TLS Termination</h3>
+        <p style="color: var(--muted); font-size: 13px; margin-top: 6px;">Decrypts HTTPS at the LB. Backend traffic stays internal.</p>
+      </div>
+    </div>
+  </div>
+  <div class="slide-num">2 / 8</div>
+</div>
+
+<!-- ══════════════════════════════════════ -->
+<!-- SLIDE 3: TYPES                        -->
+<!-- ══════════════════════════════════════ -->
+<div class="slide" id="slide-3">
+  <h2>Types of Load Balancers</h2>
+  <div style="display: flex; flex-direction: column; gap: 20px; flex: 1;">
+
+    <div class="grid2" style="flex: 0;">
+      <div class="card" style="border-color: rgba(248,81,73,0.3);">
+        <div style="display:flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+          <h3>🏗 Hardware-Based</h3>
+          <span class="tag tag-red">LEGACY</span>
+        </div>
+        <ul class="clean" style="font-size: 13px;">
+          <li>Physical rack in data center</li>
+          <li class="warn">Scaling = buying hardware</li>
+          <li>Cisco, NetScaler</li>
+        </ul>
+      </div>
+      <div class="card" style="border-color: rgba(63,185,80,0.3);">
+        <div style="display:flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+          <h3>☁️ Software-Based</h3>
+          <span class="tag tag-green">WE USE THIS</span>
+        </div>
+        <ul class="clean" style="font-size: 13px;">
+          <li>Runs on VM / Cloud</li>
+          <li class="ok">Scales infinitely on-demand</li>
+          <li>AWS ALB, NLB · Tardigrade</li>
+        </ul>
+      </div>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 12px; justify-content: center;">
+      <span class="tag tag-red">Hardware</span>
+      <span style="color: var(--accent); font-size: 20px;">⟶</span>
+      <span style="font-size: 13px; color: var(--muted); font-weight: 600; background: var(--surface2); padding: 4px 16px; border-radius: 20px;">TARDIGRADE MIGRATION</span>
+      <span style="color: var(--accent); font-size: 20px;">⟶</span>
+      <span class="tag tag-green">Tardigrade ALB (Software)</span>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th></th>
+          <th>🔵 Application LB (L7) — <span style="color: var(--accent);">What we use (APX-IN)</span></th>
+          <th>🟠 Network LB (L4)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="muted" style="font-size:12px; font-weight:600;">Operates at</td>
+          <td>HTTP / HTTPS layer</td>
+          <td>IP + Port layer</td>
+        </tr>
+        <tr>
+          <td class="muted" style="font-size:12px; font-weight:600;">Routes by</td>
+          <td>URL path, headers, cookies</td>
+          <td>IP address + port only</td>
+        </tr>
+        <tr>
+          <td class="muted" style="font-size:12px; font-weight:600;">Example</td>
+          <td><code>/api</code> → Service A &nbsp;&nbsp; <code>/images</code> → Service B</td>
+          <td><code>:443</code>, <code>:8080</code> → TCP target</td>
+        </tr>
+        <tr>
+          <td class="muted" style="font-size:12px; font-weight:600;">Static IP?</td>
+          <td>❌ IPs change on every scaling event</td>
+          <td>✅ Static IP per AZ (lifetime)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="slide-num">3 / 8</div>
+</div>
+
+<!-- ══════════════════════════════════════ -->
+<!-- SLIDE 4: VIPs                         -->
+<!-- ══════════════════════════════════════ -->
+<div class="slide" id="slide-4">
+  <h2>VIPs — Virtual IPs</h2>
+  <div class="row" style="gap: 28px;">
+
+    <div class="col" style="flex: 1.2;">
+      <div class="card" style="flex: 1; padding: 24px;">
+        <p style="font-size: 12px; color: var(--muted); margin-bottom: 16px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">APX-IN VIP Structure (eu-west-1)</p>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+          <a href="https://paste.amazon.com/show/chinmey/1771739553" target="_blank" style="text-decoration:none;">
+            <div class="flow-node blue clickable-node" style="width: 220px; padding: 14px;">
+              VIP Endpoint
+              <div class="flow-label">:443 / :80 · Tardigrade ALB</div>
+              <div class="flow-label" style="color: var(--accent); margin-top: 3px;">↗ ARN breakdown</div>
+            </div>
+          </a>
+          <div style="background: var(--surface2); border-radius: 6px; padding: 6px 14px; font-size: 12px; color: var(--accent4);">
+            ⚙ Least Outstanding Requests
+          </div>
+          <div style="display: flex; gap: 12px; width: 100%;">
+            <div class="az-box">
+              <div class="az-label">AZ 1a</div>
+              <div class="host-box healthy">Host A</div>
+              <div class="host-box healthy">Host B</div>
+            </div>
+            <div class="az-box">
+              <div class="az-label">AZ 1b</div>
+              <div class="host-box healthy">Host C</div>
+              <div class="host-box healthy">Host D</div>
+            </div>
+            <div class="az-box">
+              <div class="az-label">AZ 1c</div>
+              <div class="host-box healthy">Host E</div>
+              <div class="host-box healthy">Host F</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col" style="flex: 1; gap: 16px;">
+      <div class="card-blue" style="padding: 20px;">
+        <p style="font-size: 12px; color: var(--accent); font-weight: 600; margin-bottom: 8px; text-transform: uppercase;">MaxConn — VIP Capacity</p>
+        <div class="formula" style="font-size: 14px; text-align: left; padding: 12px 16px;">
+          Capacity = <span style="color: var(--accent2);">num_hosts</span> × <span style="color: var(--accent5);">MaxConn_per_host</span>
+        </div>
+        <p style="font-size: 12px; color: var(--muted); margin-top: 10px;">
+          Overflow → <span style="color: var(--danger);">MaxConnRejectCount ↑</span> → <span style="color: var(--danger);">HTTP 503</span><br>
+          <span style="color: var(--warn);">This has happened to APX-IN. We have dedicated alarms for it.</span>
+        </p>
+      </div>
+
+      <div class="card">
+        <p style="font-size: 12px; color: var(--muted); font-weight: 600; margin-bottom: 12px; text-transform: uppercase;">Balancing Algorithms</p>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--surface2); border-radius: 6px;">
+            <span style="font-size: 13px; font-weight: 600;">Least Outstanding Requests</span>
+            <span class="tag tag-green">ALB Default · APX</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--surface2); border-radius: 6px;">
+            <span style="font-size: 13px;">Round Robin</span>
+            <span class="tag tag-blue">ALB Option</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--surface2); border-radius: 6px;">
+            <span style="font-size: 13px;">IP Hash</span>
+            <span class="tag tag-orange">NLB</span>
+          </div>
+        </div>
+      </div>
+
+      <a href="https://antidote.corp.amazon.com/vip?vip=arn%3Aaws%3Atardigrade%3Aeu-west-1%3A807553271436%3Atargetgroup%2FProd1Ca-dubp01-TCP-HTTPS-WJa%2F25c38f2c89533592adffdf8cd56c022b&region=dub&period=OneMinute&start_time=-PT3H&is_iframe=False&auto_refresh=off" target="_blank" style="text-decoration:none;">
+        <div class="card clickable-node" style="border-color: rgba(210,168,255,0.3); background: rgba(210,168,255,0.05);">
+          <p style="font-size: 13px;">🔍 <strong>Antidote</strong> — inspect live VIP config, metrics, MaxConn per host, active connections</p>
+          <p style="font-size: 11px; color: var(--accent); margin-top: 6px;">↗ Open live · Prod1Ca Fleet1 · DUB · eu-west-1</p>
+        </div>
+      </a>
+    </div>
+  </div>
+  <div class="slide-num">4 / 8</div>
+</div>
+
+<!-- ══════════════════════════════════════ -->
+<!-- SLIDE 5: REQUEST JOURNEY              -->
+<!-- ══════════════════════════════════════ -->
+<div class="slide" id="slide-5">
+  <h2>How a Request Reaches APX-IN</h2>
+  <div style="display: flex; flex-direction: column; gap: 16px; flex: 1;">
+
+    <div class="card" style="padding: 24px;">
+      <div style="display: flex; align-items: flex-start; justify-content: center; gap: 0; overflow-x: auto;">
+        <div style="text-align: center;">
+          <div class="flow-node blue">🌐 User</div>
+          <div class="flow-label" style="margin-top: 6px;">amazon.in</div>
+        </div>
+        <div class="flow-arrow" style="margin-top: 14px;">→</div>
+        <div style="text-align: center;">
+          <div class="flow-node purple">🔍 Route 53</div>
+          <div class="flow-label" style="margin-top: 6px;">DNS Resolve<br><span style="color: var(--accent5);">TTL = 60s</span></div>
+        </div>
+        <div class="flow-arrow" style="margin-top: 14px;">→</div>
+        <div style="text-align: center;">
+          <div class="flow-node orange">⚖️ Tardigrade ALB</div>
+          <div class="flow-label" style="margin-top: 6px;">port 9443<br>TLS Termination</div>
+        </div>
+        <div class="flow-arrow" style="margin-top: 14px;">→</div>
+        <div style="text-align: center;">
+          <a href="https://paste.amazon.com/show/chinmey/1771739553" target="_blank" style="text-decoration:none;">
+            <div class="flow-node green clickable-node">🎯 Target Group</div>
+          </a>
+          <div class="flow-label" style="margin-top: 6px;">Prod1Ca-dubp01-TCP-HTTPS-WJa<br><span style="color: var(--accent);">↗ ARN breakdown</span></div>
+        </div>
+        <div class="flow-arrow" style="margin-top: 14px;">→</div>
+        <div style="text-align: center;">
+          <div class="flow-node green">🖥 APX-IN Host</div>
+          <div class="flow-label" style="margin-top: 6px;">POST /continueWidget<br>Process &amp; respond</div>
+        </div>
+        <div class="flow-arrow" style="margin-top: 14px;">→</div>
+        <div style="text-align: center;">
+          <div class="flow-node blue">🌐 User</div>
+          <div class="flow-label" style="margin-top: 6px;">Response<br>re-encrypted</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid2" style="flex: 1; gap: 16px;">
+      <div class="card" style="padding: 18px;">
+        <p style="font-size: 12px; color: var(--accent4); font-weight: 600; text-transform: uppercase; margin-bottom: 12px;">🔍 DNS Resolution</p>
+        <ul class="clean" style="font-size: 13px; gap: 8px;">
+          <li>Route 53 evaluates routing policy</li>
+          <li>Returns CNAME → Tardigrade ALB endpoint</li>
+          <li>2nd query → 3 ALB IPs (one per AZ)</li>
+          <li class="warn">Client must honor TTL = 60s</li>
+        </ul>
+      </div>
+      <div class="card" style="padding: 18px;">
+        <p style="font-size: 12px; color: var(--warn); font-weight: 600; text-transform: uppercase; margin-bottom: 12px;">⚖️ ALB Processing</p>
+        <ul class="clean" style="font-size: 13px; gap: 8px;">
+          <li>TLS termination at ALB edge</li>
+          <li>Picks host via Least Outstanding Reqs</li>
+          <li class="ok">Injects <code>X-Forwarded-For</code>, <code>X-Amzn-Trace-Id</code></li>
+          <li class="warn">Skips unhealthy hosts automatically</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="slide-num">5 / 8</div>
+</div>
+
+<!-- ══════════════════════════════════════ -->
+<!-- SLIDE 6: SCALING & FAILURE            -->
+<!-- ══════════════════════════════════════ -->
+<div class="slide" id="slide-6">
+  <h2>Scaling &amp; Failure Handling</h2>
+  <div class="row" style="gap: 24px;">
+
+    <div class="col" style="flex: 1;">
+      <h3 style="color: var(--accent2); font-size: 16px; margin-bottom: 8px;">📈 Scaling Flow</h3>
+      <div class="card" style="flex: 1;">
+        <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 8px; font-size: 13px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 28px; height: 28px; background: var(--accent); border-radius: 50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color: var(--bg); flex-shrink:0;">1</div>
+            <span>Traffic spike → Katana trigger fires</span>
+          </div>
+          <div style="margin-left: 14px; width: 1px; height: 14px; background: var(--border);"></div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 28px; height: 28px; background: var(--accent); border-radius: 50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color: var(--bg); flex-shrink:0;">2</div>
+            <span>Auto Scaling Group launches EC2</span>
+          </div>
+          <div style="margin-left: 14px; width: 1px; height: 14px; background: var(--border);"></div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 28px; height: 28px; background: var(--accent); border-radius: 50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color: var(--bg); flex-shrink:0;">3</div>
+            <span>Registers to Target Group</span>
+          </div>
+          <div style="margin-left: 14px; width: 1px; height: 14px; background: var(--border);"></div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 28px; height: 28px; background: var(--accent2); border-radius: 50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color: var(--bg); flex-shrink:0;">4</div>
+            <span>Passes health check → traffic begins</span>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 16px; margin-top: 20px;">
+          <div style="text-align: center; flex: 1; padding: 12px; background: var(--surface2); border-radius: 8px;">
+            <div class="stat" style="font-size: 24px; color: var(--accent2);">1–3 min</div>
+            <div class="stat-label">Scale Up (ALB)</div>
+          </div>
+          <div style="text-align: center; flex: 1; padding: 12px; background: var(--surface2); border-radius: 8px;">
+            <div class="stat" style="font-size: 24px; color: var(--warn);">12 hrs</div>
+            <div class="stat-label">Scale Down</div>
+          </div>
+          <div style="text-align: center; flex: 1; padding: 12px; background: var(--surface2); border-radius: 8px;">
+            <div class="stat" style="font-size: 24px; color: var(--accent);">~instant</div>
+            <div class="stat-label">Scale Up (NLB)</div>
+          </div>
+        </div>
+        <p style="font-size: 11px; color: var(--muted); margin-top: 8px;">⚠ Traffic spikes &gt;50% in &lt;5 min can temporarily overwhelm ALB before it scales.</p>
+      </div>
+    </div>
+
+    <div class="col" style="flex: 1;">
+      <h3 style="color: var(--danger); font-size: 16px; margin-bottom: 8px;">💥 Failure Scenarios</h3>
+      <div style="display: flex; flex-direction: column; gap: 12px; flex: 1;">
+        <div class="card-green" style="padding: 14px 18px;">
+          <p style="font-size: 13px; font-weight: 600;">Host crashes</p>
+          <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Health check fails → removed from target group. <span style="color: var(--accent2);">Zero user impact.</span></p>
+        </div>
+        <div class="card-green" style="padding: 14px 18px;">
+          <p style="font-size: 13px; font-weight: 600;">ALB node fails</p>
+          <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Multi-node + multi-AZ. AWS replaces node. DNS retries healthy AZ.</p>
+        </div>
+        <div class="card-warn" style="padding: 14px 18px;">
+          <p style="font-size: 13px; font-weight: 600;">⚠️ Entire AZ goes down</p>
+          <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Route 53 removes failed AZ IPs. Clients auto-route to remaining AZs.</p>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <div class="az-box" style="border-color: rgba(63,185,80,0.4);">
+            <div class="az-label" style="color: var(--accent2);">AZ 1a ✓</div>
+            <div class="host-box healthy">Host A</div>
+          </div>
+          <div class="az-box" style="border-color: rgba(248,81,73,0.4); opacity: 0.55;">
+            <div class="az-label" style="color: var(--danger);">AZ 1b ✗</div>
+            <div class="host-box unhealthy">Host B</div>
+          </div>
+          <div class="az-box" style="border-color: rgba(63,185,80,0.4);">
+            <div class="az-label" style="color: var(--accent2);">AZ 1c ✓</div>
+            <div class="host-box healthy">Host C</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-num">6 / 8</div>
+</div>
+
+<!-- ══════════════════════════════════════ -->
+<!-- SLIDE 7: GOTCHAS                      -->
+<!-- ══════════════════════════════════════ -->
+<div class="slide" id="slide-7">
+  <h2>⚡ Gotchas — What the LB Does That Surprises Everyone</h2>
+  <div class="grid2" style="flex: 1; gap: 18px;">
+
+    <div class="gotcha card-danger">
+      <div class="gotcha-icon">🚪</div>
+      <div class="gotcha-title">Fail Open Mode</div>
+      <div class="gotcha-body">
+        If <strong>ALL</strong> targets fail health checks, ALB doesn't 503 — it keeps routing anyway.<br><br>
+        <em>Logic: "Assume health check misconfiguration, not real outage."</em><br><br>
+        Symptom: timeouts with "100% unhealthy" hosts. Check <code>UnhealthyHostCountRatio</code> — we alarm on this across all 3 APX fleets.
+      </div>
+      <span class="tag tag-red" style="align-self: flex-start;">APX: alarms on RF, Fleet1, Fleet2</span>
+    </div>
+
+    <div class="gotcha card-warn">
+      <div class="gotcha-icon">⏳</div>
+      <div class="gotcha-title">Deregistration Delay = 300s Default</div>
+      <div class="gotcha-body">
+        On deploy/scale-down, ALB waits <strong>5 full minutes</strong> before stopping traffic to a removed host.<br><br>
+        If your app exits in 30s → remaining 270s of requests get <strong style="color: var(--danger);">502'd</strong>.<br><br>
+        Fix: tune <code>deregistration_delay.timeout_seconds</code> to your actual drain time.
+      </div>
+      <span class="tag tag-orange" style="align-self: flex-start;">Deployment Risk · AWS default</span>
+    </div>
+
+    <div class="gotcha card-blue">
+      <div class="gotcha-icon">🐢</div>
+      <div class="gotcha-title">Slow Start ≠ Least Outstanding Requests</div>
+      <div class="gotcha-body">
+        Slow Start ramps new targets 0% → 100% gradually — great for JVM warm-up.<br><br>
+        But <strong>you can't use Slow Start + LOR simultaneously</strong>.<br><br>
+        Since APX uses LOR (ALB default), new hosts during scale-out get full traffic immediately — cold start under load.
+      </div>
+      <span class="tag tag-blue" style="align-self: flex-start;">LOR is our default · incompatible</span>
+    </div>
+
+    <div class="gotcha" style="background: rgba(210,168,255,0.07); border: 1px solid rgba(210,168,255,0.3); border-radius: 12px; padding: 20px;">
+      <div class="gotcha-icon">👻</div>
+      <div class="gotcha-title">Health Check Port ≠ App Port</div>
+      <div class="gotcha-body">
+        ALB probes port 8001. App serves on port 80. Port 8001 stays up → host marked <strong style="color: var(--accent2);">Healthy</strong>.<br><br>
+        Actual app is down. Traffic flows in. You get errors with "all hosts healthy."<br><br>
+        Fix: Health check path must exercise real app functionality on the real port.
+      </div>
+      <span class="tag tag-purple" style="align-self: flex-start;">Silent Failure</span>
+    </div>
+  </div>
+  <div class="slide-num">7 / 8</div>
+</div>
+
+<!-- ══════════════════════════════════════ -->
+<!-- SLIDE 8: DNS PITFALLS + MAXCONN       -->
+<!-- ══════════════════════════════════════ -->
+<div class="slide" id="slide-8">
+  <h2>🌐 DNS Pitfalls &amp; The MaxConn Reality</h2>
+  <div class="row" style="gap: 24px;">
+
+    <div class="col" style="flex: 1.1;">
+      <h3 style="font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">Four Rules That Prevent Outages</h3>
+      <div style="display: flex; flex-direction: column; gap: 10px; flex: 1;">
+        <div class="card" style="padding: 14px 18px; display: flex; gap: 14px; align-items: flex-start;">
+          <span style="font-size: 22px; flex-shrink: 0;">❌</span>
+          <div>
+            <p style="font-size: 13px; font-weight: 600; color: var(--danger);">Never hardcode ALB IPs</p>
+            <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">ALB IPs change on every scale / node replacement. Hardcoded IP = stuck on a dead endpoint. Always use DNS.</p>
+          </div>
+        </div>
+        <div class="card" style="padding: 14px 18px; display: flex; gap: 14px; align-items: flex-start;">
+          <span style="font-size: 22px; flex-shrink: 0;">⏱</span>
+          <div>
+            <p style="font-size: 13px; font-weight: 600; color: var(--accent5);">Honor the 60s TTL</p>
+            <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">ELB DNS TTL is always 60s. Clients caching longer hold stale IPs for minutes after a scaling event.</p>
+          </div>
+        </div>
+        <div class="card" style="padding: 14px 18px; display: flex; gap: 14px; align-items: flex-start;">
+          <span style="font-size: 22px; flex-shrink: 0;">🔄</span>
+          <div>
+            <p style="font-size: 13px; font-weight: 600; color: var(--accent2);">Re-resolve DNS on any failed connection</p>
+            <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">On broken TCP → re-query DNS immediately, even if TTL hasn't expired. Otherwise client retries dead IP indefinitely.</p>
+          </div>
+        </div>
+        <div class="card" style="padding: 14px 18px; display: flex; gap: 14px; align-items: flex-start;">
+          <span style="font-size: 22px; flex-shrink: 0;">📡</span>
+          <div>
+            <p style="font-size: 13px; font-weight: 600; color: var(--accent);">Exponential backoff + jitter on reconnect</p>
+            <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">1000 clients reconnecting simultaneously → thundering herd. ALB needs 1-3 min to scale. Stagger reconnects.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="vdivider"></div>
+
+    <div class="col" style="flex: 1;">
+      <h3 style="font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">MaxConn — This Is Real for APX-IN</h3>
+
+      <div class="card-danger" style="padding: 18px; margin-bottom: 12px;">
+        <p style="font-size: 12px; font-weight: 600; color: var(--danger); margin-bottom: 8px; text-transform: uppercase;">From our own runbook</p>
+        <p style="font-size: 13px; font-style: italic;">"Load balancer has reached maximum connections. Similar to the Spillover alarm we had in the VIP."</p>
+        <p style="font-size: 13px; color: var(--muted); margin-top: 8px; font-weight: 600;">Resolution: Scale the service hosts immediately.</p>
+      </div>
+
+      <div class="formula" style="font-size: 13px; text-align: left; padding: 14px 16px; margin-bottom: 12px; line-height: 1.8;">
+        MaxConn overflow<br>
+        → <span style="color: var(--danger);">MaxConnRejectCount ↑</span><br>
+        → <span style="color: var(--danger);">HTTPCodeELB503Count ↑</span><br>
+        → <span style="color: var(--danger);">Users see 503</span>
+      </div>
+
+      <div class="card" style="padding: 14px 18px;">
+        <p style="font-size: 12px; color: var(--muted); margin-bottom: 10px; font-weight: 600; text-transform: uppercase;">Active Alarms (RF · Fleet1 · Fleet2)</p>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+          <span class="tag tag-red">MaxConnRejectCount</span>
+          <span class="tag tag-red">HTTPCodeELB503Count</span>
+          <span class="tag tag-orange">SpillOver.Aggregate</span>
+          <span class="tag tag-blue">UnhealthyHostCountRatio</span>
+          <span class="tag tag-blue">TargetConnectionErrorCount</span>
+        </div>
+        <p style="font-size: 11px; color: var(--muted); margin-top: 10px;">Defined in <code>monitors/ApertureService/tardigrade/</code></p>
+      </div>
+    </div>
+  </div>
+  <div class="slide-num">8 / 8</div>
+</div>
+
+</div><!-- end deck -->
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  let current = 0;
+  const total = slides.length;
+
+  function go(n) {
+    slides[current].classList.remove('active');
+    current = Math.max(0, Math.min(total - 1, n));
+    slides[current].classList.add('active');
+    document.getElementById('progress').style.width = ((current + 1) / total * 100) + '%';
+  }
+
+  document.addEventListener('keydown', e => {
+    if (['ArrowRight','ArrowDown',' '].includes(e.key)) { e.preventDefault(); go(current + 1); }
+    if (['ArrowLeft','ArrowUp'].includes(e.key)) { e.preventDefault(); go(current - 1); }
+    if (e.key === 'Home') go(0);
+    if (e.key === 'End') go(total - 1);
+  });
+
+  let touchX = 0;
+  document.addEventListener('touchstart', e => { touchX = e.touches[0].clientX; });
+  document.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - touchX;
+    if (Math.abs(dx) > 50) go(dx < 0 ? current + 1 : current - 1);
+  });
+
+  document.addEventListener('click', e => {
+    if (e.target.closest('a')) return;
+    go(e.clientX > window.innerWidth / 2 ? current + 1 : current - 1);
+  });
+
+  document.getElementById('progress').style.width = (1 / total * 100) + '%';
+
+  // ── PRESENTER NOTES ─────────────────────────────────────────────────
+  const NOTES = [
+    {
+      title: "Title",
+      points: [
+        "Hook: 'This isn't abstract theory — everything here is grounded in APX-IN, in production, right now.'",
+        "Frame: By the end you'll know what Antidote is showing you, and the ONE metric to check when users complain but hosts look healthy.",
+        "8 slides. Basics → things that have actually bitten teams in prod, including ours."
+      ],
+      watch: []
+    },
+    {
+      title: "What is a Load Balancer?",
+      points: [
+        "The word 'decides' is doing a lot of work — it's not just forwarding, it's health-aware routing.",
+        "Health Awareness: probes every host every few seconds. Removes BEFORE a user hits a bad host. Invisible safety net.",
+        "TLS Termination: encrypted connection ends at the LB, not your host. One place for certs & cipher suites. Offloads crypto compute.",
+        "Earlier model: always in pairs — active + standby failover. Now: distributed across AZs, no single point of failure."
+      ],
+      watch: []
+    },
+    {
+      title: "Types of Load Balancers",
+      points: [
+        "Hardware = physical NetScaler rack. Scaling = buying hardware + waiting for it to ship. Not elastic.",
+        "Tardigrade = Amazon's internal ALB product. Replaced legacy NetScaler VIPs. We are on Tardigrade.",
+        "L7 vs L4: the question is 'what do you need to inspect to route?' URL/headers/cookies → L7 (ALB, us). Just IP+port → L4 (NLB).",
+        "KEY ROW: NLB has static IP per AZ for its lifetime. ALB IPs CHANGE on every scaling event. Foreshadows slide 8."
+      ],
+      watch: []
+    },
+    {
+      title: "VIPs — Virtual IPs",
+      points: [
+        "Click VIP Endpoint → walk through ARN live: Prod1Ca = Fleet1 prod, dubp01 = Dublin prod zone 1 (eu-west-1), port 9443.",
+        "MaxConn formula: num_hosts × MaxConn_per_host = total capacity. Exceed it → MaxConnRejectCount ↑ → HTTP 503. This has happened to us.",
+        "LOR vs Round Robin: LOR checks in-flight requests per host. Smarter for variable duration requests (some widgets 20ms, some 500ms).",
+        "OPEN ANTIDOTE LIVE → show real MaxConn, connection counts, health status per host."
+      ],
+      watch: ["💡 Good time for questions on the ARN structure"]
+    },
+    {
+      title: "How a Request Reaches APX-IN",
+      points: [
+        "Walk step by step. Pause at each arrow.",
+        "DOUBLE DNS (most people miss this): CNAME → second query → 3 IPs (one per AZ). Client picks one. Cached for exactly 60s.",
+        "Port 9443 is where TLS terminates. Decrypted there, plain HTTP forwarded to host.",
+        "Click Target Group → show Prod1Ca-dubp01-TCP-HTTPS-WJa breakdown.",
+        "X-Forwarded-For: real client IP. Without it, your host only sees the ALB's IP.",
+        "X-Amzn-Trace-Id: unique request ID injected by ALB — gold for incident correlation in logs."
+      ],
+      watch: []
+    },
+    {
+      title: "Scaling & Failure",
+      points: [
+        "Katana = internal auto-scaling trigger. ALB scale-up takes 1–3 min. Not instant.",
+        "12hr scale-down is INTENTIONAL — conservative. Better to over-provision than remove capacity during a sustained event.",
+        "NLB scales ~instantly: pre-provisioned hardware. The tradeoff for no content-based routing.",
+        "Planned spikes (sale events): request ALB pre-warming from ELB team in advance.",
+        "AZ failure: Route 53 removes dead IPs from responses. Clients re-resolving (every 60s) auto-route to healthy AZs.",
+        "Caveat: clients who cached the bad IP just before TTL expiry might hit it once before getting fresh DNS."
+      ],
+      watch: []
+    },
+    {
+      title: "⚡ Gotchas",
+      points: [
+        "🚪 FAIL OPEN: ALL hosts unhealthy → ALB still routes. Logic: 'assume misconfigured health check'. Symptom: timeouts with 100% UnhealthyHostCount. We alarm on UnhealthyHostCountRatio across RF, Fleet1, Fleet2.",
+        "⏳ DEREGISTRATION 300s: deploy → host removed → ALB keeps sending traffic for 5 MORE MINUTES. App exits in 30s → 270s of 502s. Tune deregistration_delay.timeout_seconds to your actual drain time.",
+        "🐢 SLOW START + LOR = mutually exclusive. We use LOR. New hosts during scale-out get FULL traffic immediately — cold start under load.",
+        "👻 HEALTH CHECK ≠ APP PORT: port 8001 healthy, port 80 dead. Dashboard shows all green. Users get errors. Scariest silent failure.",
+        "PAUSE after each — ask 'has anyone seen this?' You'll get war stories."
+      ],
+      watch: ["🔥 Best slide for discussion — don't rush it"]
+    },
+    {
+      title: "DNS Pitfalls & MaxConn Reality",
+      points: [
+        "LEAD WITH THE QUOTE: 'That's from our own runbook. Someone on this team wrote that after a real incident.'",
+        "MaxConn cascade: reject count ↑ → 503 ↑ → SpillOver.Aggregate alarm fires. Fix: scale hosts immediately.",
+        "5 active alarms: MaxConnRejectCount, HTTPCodeELB503Count, SpillOver.Aggregate, UnhealthyHostCountRatio, TargetConnectionErrorCount — all in monitors/ApertureService/tardigrade/",
+        "DNS Rule #1 (most important): NEVER hardcode ALB IP. IPs change on every scale/node replacement.",
+        "60s TTL: some HTTP client libraries cache longer by default — check your connection pool config.",
+        "Thundering herd: 5000 clients reconnect at T+0 → artificial spike → LB can't scale fast enough. Jitter = random delay per client = distributes the storm."
+      ],
+      watch: ["💡 If asked about deregistration delay value: 'We haven't verified APX-IN's exact value yet — 300s is the AWS default. Check Antidote.'"]
+    }
+  ];
+
+  // ── BROADCAST CHANNEL ───────────────────────────────────────────────
+  const channel = new BroadcastChannel('lb-deck');
+
+  // Patch go() to broadcast slide changes
+  const _go = go;
+  window.go = function(n) {
+    _go(n);
+    channel.postMessage({ slide: current });
+  };
+
+  // ── PRESENTER WINDOW ────────────────────────────────────────────────
+  let presenterWin = null;
+
+  function buildPresenterHTML(slideIdx) {
+    const n = NOTES[slideIdx];
+    const next = NOTES[slideIdx + 1];
+    const pointsHTML = n.points.map(p =>
+      `<li>${p}</li>`
+    ).join('');
+    const watchHTML = n.watch.map(w =>
+      `<div class="watch">${w}</div>`
+    ).join('');
+    const nextHTML = next
+      ? `<div class="next-label">NEXT → ${next.title}</div>
+         <ul class="next-points">${next.points.slice(0,2).map(p=>`<li>${p}</li>`).join('')}</ul>`
+      : `<div class="next-label" style="color:#3fb950">✅ Last slide</div>`;
+
+    return `<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>Presenter Notes</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Segoe UI',system-ui,sans-serif; background:#0d1117; color:#e6edf3; padding:0; height:100vh; display:flex; flex-direction:column; overflow:hidden; }
+  #header { background:#161b22; border-bottom:1px solid #30363d; padding:14px 20px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0; }
+  #slide-title { font-size:18px; font-weight:700; color:#58a6ff; }
+  #slide-count { font-size:13px; color:#8b949e; font-family:monospace; }
+  #body { flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:16px; }
+  ul.points { list-style:none; display:flex; flex-direction:column; gap:12px; }
+  ul.points li { font-size:14px; line-height:1.6; padding:10px 14px; background:#161b22; border-left:3px solid #58a6ff; border-radius:0 8px 8px 0; }
+  .watch { font-size:13px; padding:8px 14px; background:rgba(255,166,87,0.1); border:1px solid rgba(255,166,87,0.3); border-radius:8px; color:#ffa657; }
+  #footer { background:#161b22; border-top:1px solid #30363d; padding:14px 20px; flex-shrink:0; }
+  .next-label { font-size:11px; font-weight:700; color:#8b949e; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px; }
+  ul.next-points { list-style:none; display:flex; flex-direction:column; gap:6px; }
+  ul.next-points li { font-size:12px; color:#8b949e; padding:6px 12px; background:#0d1117; border-radius:6px; border:1px solid #30363d; }
+  #progress-bar { height:3px; background:#58a6ff; transition:width 0.3s; }
+  .hint { font-size:11px; color:#444; text-align:center; padding:6px; }
+</style></head><body>
+<div id="progress-bar" style="width:${((slideIdx+1)/8*100)}%"></div>
+<div id="header">
+  <div id="slide-title">${n.title}</div>
+  <div id="slide-count">Slide ${slideIdx+1} of 8</div>
+</div>
+<div id="body">
+  <ul class="points">${pointsHTML}</ul>
+  ${watchHTML}
+</div>
+<div id="footer">
+  ${nextHTML}
+</div>
+<div class="hint">Auto-syncs with your presentation · Keep this window off shared screen</div>
+<script>
+  const ch = new BroadcastChannel('lb-deck');
+  const allNotes = ${JSON.stringify(NOTES)};
+  ch.onmessage = e => {
+    const idx = e.data.slide;
+    const n = allNotes[idx];
+    const next = allNotes[idx+1];
+    document.getElementById('slide-title').textContent = n.title;
+    document.getElementById('slide-count').textContent = 'Slide '+(idx+1)+' of 8';
+    document.getElementById('progress-bar').style.width = ((idx+1)/8*100)+'%';
+    document.querySelector('ul.points').innerHTML = n.points.map(p=>'<li>'+p+'</li>').join('');
+    const watchEl = document.querySelector('.watch');
+    if(watchEl) watchEl.remove();
+    if(n.watch && n.watch.length) {
+      const w = document.createElement('div');
+      w.className='watch';
+      w.textContent = n.watch[0];
+      document.getElementById('body').appendChild(w);
+    }
+    const footer = document.getElementById('footer');
+    if(next) {
+      footer.innerHTML = '<div class="next-label">NEXT → '+next.title+'</div><ul class="next-points">'+next.points.slice(0,2).map(p=>'<li>'+p+'</li>').join('')+'</ul>';
+    } else {
+      footer.innerHTML = '<div class="next-label" style="color:#3fb950">✅ Last slide</div>';
+    }
+  };
+<\/script>
+</body></html>`;
+  }
+
+  function openPresenterWindow() {
+    presenterWin = window.open('', 'presenter-notes',
+      'width=620,height=720,left=50,top=50,resizable=yes,scrollbars=yes');
+    if (presenterWin) {
+      presenterWin.document.open();
+      presenterWin.document.write(buildPresenterHTML(current));
+      presenterWin.document.close();
+    }
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'p' || e.key === 'P') openPresenterWindow();
+  });
+</body>
+</html>
